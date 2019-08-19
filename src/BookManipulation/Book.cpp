@@ -217,6 +217,42 @@ const QString HTML5_COVER_SOURCE =
     "</body>\n"
     "</html>\n";
 
+const QString HTML_FULL_IMAGE_SOURCE =
+	"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
+	"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n"
+	"\"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n"
+	"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+	"<head>\n"
+	"<title></title>\n"
+	"</head>\n"
+	""
+	"<body>\n"
+	"  <div style=\"text-align: center; padding: 0pt; margin: 0pt;\">\n"
+	"    <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" version=\"1.1\" viewBox=\"0 0 SGC_IMAGE_WIDTH SGC_IMAGE_HEIGHT\" width=\"100%\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n"
+	"      <image width=\"SGC_IMAGE_WIDTH\" height=\"SGC_IMAGE_HEIGHT\" xlink:href=\"SGC_IMAGE_FILENAME\"/>\n"
+	"    </svg>\n"
+	"  </div>\n"
+	"</body>\n"
+	"</html>\n";
+
+const QString HTML5_FULL_IMAGE_SOURCE =
+	"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n"
+	"<!DOCTYPE html>\n\n"
+	"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\">\n"
+	"<head>\n"
+	"<title></title>\n"
+	"</head>\n"
+	""
+	"<body>\n"
+	"  <div style=\"text-align: center; padding: 0pt; margin: 0pt;\">\n"
+	"    <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" version=\"1.1\" viewBox=\"0 0 SGC_IMAGE_WIDTH SGC_IMAGE_HEIGHT\" width=\"100%\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n"
+	"      <image width=\"SGC_IMAGE_WIDTH\" height=\"SGC_IMAGE_HEIGHT\" xlink:href=\"SGC_IMAGE_FILENAME\"/>\n"
+	"    </svg>\n"
+	"  </div>\n"
+	"</body>\n"
+	"</html>\n";
+
+
 Book::Book()
     :
     m_Mainfolder(new FolderKeeper(this)),
@@ -400,6 +436,29 @@ HTMLResource *Book::CreateEmptyNavFile(bool update_opf)
     return html_resource;
 }
 
+HTMLResource *Book::CreateFullImageHTMLFile(HTMLResource *resource)
+{
+	HTMLResource *new_resource = CreateNewHTMLFile();
+	QString version = new_resource->GetEpubVersion();
+	if (version.startsWith('2')) {
+		new_resource->SetText(HTML_FULL_IMAGE_SOURCE);
+	}
+	else {
+		new_resource->SetText(HTML5_FULL_IMAGE_SOURCE);
+	}
+	if (resource != NULL) {
+		QList<HTMLResource *> html_resources = m_Mainfolder->GetResourceTypeList<HTMLResource>(true);
+		int reading_order = GetOPF()->GetReadingOrder(resource) + 1;
+
+		if (reading_order > 0) {
+			html_resources.insert(reading_order, new_resource);
+			GetOPF()->UpdateSpineOrder(html_resources);
+		}
+	}
+
+	SetModified(true);
+	return new_resource;
+}
 
 HTMLResource *Book::CreateEmptyHTMLFile(HTMLResource *resource)
 {

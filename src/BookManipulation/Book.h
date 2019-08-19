@@ -152,6 +152,13 @@ public:
      */
     HTMLResource *CreateEmptyHTMLFile();
 
+	/**
+	* Creates a new HTMLResource file with a basic XHTML structure
+	* inserted after the given resource to support fullscreen.
+	* The file on disk has only placeholder text.
+	*/
+	HTMLResource *CreateFullImageHTMLFile(HTMLResource *resource);
+
     /**
      * Creates a new HTML Nav file with a basic nav structure.
      */

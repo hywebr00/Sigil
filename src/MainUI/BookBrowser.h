@@ -159,6 +159,7 @@ public slots:
     void CopyHTML();
     void CopyCSS();
     void AddNewHTML();
+	void AddNewFullImage();
     void AddNewCSS();
     void AddNewSVG();
     void CreateHTMLTOCCSSFile();

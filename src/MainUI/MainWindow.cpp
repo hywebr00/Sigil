@@ -4431,6 +4431,7 @@ void MainWindow::ExtendUI()
     sm->registerAction(this, ui.actionNewHTMLFile, "MainWindow.NewHTMLFile");
     sm->registerAction(this, ui.actionNewCSSFile, "MainWindow.NewCSSFile");
     sm->registerAction(this, ui.actionNewSVGFile, "MainWindow.NewSVGFile");
+	sm->registerAction(this, ui.actionNewFullImageFile, "MainWindow.NewFullImageFile");
     sm->registerAction(this, ui.actionAddExistingFile, "MainWindow.AddExistingFile");
     sm->registerAction(this, ui.actionOpen, "MainWindow.Open");
 #ifndef Q_OS_MAC
@@ -4987,7 +4988,8 @@ void MainWindow::ConnectSignalsToSlots()
     connect(ui.actionNewHTMLFile,   SIGNAL(triggered()), m_BookBrowser, SLOT(AddNewHTML()));
     connect(ui.actionNewCSSFile,    SIGNAL(triggered()), m_BookBrowser, SLOT(AddNewCSS()));
     connect(ui.actionNewSVGFile,    SIGNAL(triggered()), m_BookBrowser, SLOT(AddNewSVG()));
-    connect(ui.actionAddExistingFile,   SIGNAL(triggered()), m_BookBrowser, SLOT(AddExisting()));
+	connect(ui.actionNewFullImageFile, SIGNAL(triggered()), m_BookBrowser, SLOT(AddNewFullImage()));
+	connect(ui.actionAddExistingFile,   SIGNAL(triggered()), m_BookBrowser, SLOT(AddExisting()));
     connect(ui.actionSave,          SIGNAL(triggered()), this, SLOT(Save()));
     connect(ui.actionSaveAs,        SIGNAL(triggered()), this, SLOT(SaveAs()));
     connect(ui.actionSaveACopy,     SIGNAL(triggered()), this, SLOT(SaveACopy()));

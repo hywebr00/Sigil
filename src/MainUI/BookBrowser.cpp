@@ -51,6 +51,7 @@
 #include "ResourceObjects/NavProcessor.h"
 #include "sigil_constants.h"
 #include "sigil_exception.h"
+#include "Dialogs/SelectFiles.h"
 
 static const QString SETTINGS_GROUP = "bookbrowser";
 static const QString OPF_NCX_EDIT_WARNING_KEY = SETTINGS_GROUP + "-opfncx-warning";
@@ -500,6 +501,71 @@ void BookBrowser::AddNewHTML()
     emit ResourceActivated(new_html_resource);
     emit BookContentModified();
     Refresh();
+}
+
+// Create a new HTML file for a fullscreen image and insert it after the currently selected file
+void BookBrowser::AddNewFullImage()
+{
+	// Get the image to use.
+	QStringList selected_files;
+	// Get just images, not svg files.
+	QList<Resource *> image_resources = m_Book->GetFolderKeeper()->GetResourceListByType(Resource::ImageResourceType);
+	QString title = tr("Add Full Image");
+	SelectFiles select_files(title, image_resources, QString(), this);
+
+	if (select_files.exec() == QDialog::Accepted) {
+		if (select_files.IsInsertFromDisk()) {
+			QStringList filenames = AddExisting(false, true);
+			// Convert full path to filename.
+			foreach(QString filename, filenames) {
+				QString internal_filename = filename.right(filename.length() - filename.lastIndexOf("/") - 1);
+				selected_files.append(internal_filename);
+			}
+		}
+		else {
+			selected_files = select_files.SelectedImages();
+		}
+	}
+	if (selected_files.count() == 0) {
+		return;
+	}
+	QString image_filename = selected_files.first();
+
+	Resource *current_resource = GetCurrentResource();
+	HTMLResource *current_html_resource = qobject_cast<HTMLResource *>(current_resource);
+	HTMLResource *new_html_resource = m_Book->CreateFullImageHTMLFile(current_html_resource);
+	QString version = m_Book->GetConstOPF()->GetEpubVersion();
+
+	try {
+		Resource *image_resource = m_Book->GetFolderKeeper()->GetResourceByFilename(image_filename);
+		ImageResource *image_type_resource = qobject_cast<ImageResource *>(image_resource);
+		if (image_type_resource) {
+			// Add the filename and dimensions of the image to the HTML source.
+			QString image_relative_path = "../" + image_resource->GetRelativePathToOEBPS();
+			QImage img(image_resource->GetFullPath());
+			QString text = new_html_resource->GetText();
+			QString width = QString::number(img.width());
+			QString height = QString::number(img.height());
+			text.replace("SGC_IMAGE_FILENAME", image_relative_path);
+			text.replace("SGC_IMAGE_WIDTH", width);
+			text.replace("SGC_IMAGE_HEIGHT", height);
+			new_html_resource->SetText(text);
+		}
+		else {
+			Utility::DisplayStdErrorDialog(tr("Unexpected error. Only image files can be used for the cover."));
+		}
+	}
+	catch (ResourceDoesNotExist) {
+		//
+	}
+	if (current_resource != NULL) {
+		m_Book->MoveResourceAfter(new_html_resource, current_html_resource);
+	}
+
+	// Open the new file in a tab
+	emit ResourceActivated(new_html_resource);
+	emit BookContentModified();
+	Refresh();
 }
 
 void BookBrowser::CopyCSS()

@@ -50,7 +50,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>22</height>
+     <height>18</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -66,6 +66,7 @@
      <addaction name="actionNewHTMLFile"/>
      <addaction name="actionNewCSSFile"/>
      <addaction name="actionNewSVGFile"/>
+     <addaction name="actionNewFullImageFile"/>
     </widget>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
@@ -492,22 +493,6 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <widget class="QToolButton" name="tbHeadings">
-    <property name="icon">
-    <iconset resource="../Resource_Files/main/main.qrc">
-     <normaloff>:/main/heading-all_48px.png</normaloff>:/main/heading-all_48px.png</iconset>
-   </property>
-    <property name="toolTip">
-      <string>set Heading Level of Selected Text</string>
-   </property>
-    <addaction name="actionHeading1"/>
-    <addaction name="actionHeading2"/>
-    <addaction name="actionHeading3"/>
-    <addaction name="actionHeading4"/>
-    <addaction name="actionHeading5"/>
-    <addaction name="actionHeading6"/>
-    <addaction name="actionHeadingNormal"/>
-  </widget>
   </widget>
   <widget class="QToolBar" name="toolBarTextFormats">
    <property name="windowTitle">
@@ -577,18 +562,6 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <widget class="QToolButton" name="tbCase">
-    <property name="text">
-     <string>aA</string>
-    </property>
-    <property name="toolTip">
-     <string>set Case of Selected Text</string>
-    </property>
-    <addaction name="actionCasingLowercase"/>
-    <addaction name="actionCasingUppercase"/>
-    <addaction name="actionCasingTitlecase"/>
-    <addaction name="actionCasingCapitalize"/>
-   </widget>
   </widget>
   <widget class="QToolBar" name="toolBarTextDirection">
    <property name="windowTitle">
@@ -635,7 +608,6 @@
    <addaction name="actionClip19"/>
    <addaction name="actionClip20"/>
   </widget>
-
   <action name="actionNew">
    <property name="icon">
     <iconset resource="../Resource_Files/main/main.qrc">
@@ -2380,6 +2352,11 @@
   <action name="actionRemoveNCXGuide">
    <property name="text">
     <string>Remove the NCX and Guide</string>
+   </property>
+  </action>
+  <action name="actionNewFullImageFile">
+   <property name="text">
+    <string>Full Image File</string>
    </property>
   </action>
  </widget>
