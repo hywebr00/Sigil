@@ -39,7 +39,8 @@
 int SearchOperations::CountInFiles(const QString &search_regex,
                                    QList<Resource *> resources,
                                    SearchType search_type,
-                                   bool check_spelling)
+                                   bool check_spelling,
+								   bool exclude_html_tag)
 {
     QProgressDialog progress(QObject::tr("Counting occurrences.."), 0, 0, resources.count(), Utility::GetMainWindow());
     progress.setMinimumDuration(PROGRESS_BAR_MINIMUM_DURATION);
@@ -50,7 +51,7 @@ int SearchOperations::CountInFiles(const QString &search_regex,
     foreach(Resource * resource, resources) {
         progress.setValue(progress_value++);
         qApp->processEvents();
-        count += CountInFile(search_regex, resource, search_type, check_spelling);
+		count += CountInFile(search_regex, resource, search_type, check_spelling, exclude_html_tag);
     }
     return count;
 }
@@ -59,7 +60,8 @@ int SearchOperations::CountInFiles(const QString &search_regex,
 int SearchOperations::ReplaceInAllFIles(const QString &search_regex,
                                         const QString &replacement,
                                         QList<Resource *> resources,
-                                        SearchType search_type)
+                                        SearchType search_type,
+										bool exclude_html_tag)
 {
     QProgressDialog progress(QObject::tr("Replacing search term..."), 0, 0, resources.count(), Utility::GetMainWindow());
     progress.setMinimumDuration(PROGRESS_BAR_MINIMUM_DURATION);
@@ -70,7 +72,7 @@ int SearchOperations::ReplaceInAllFIles(const QString &search_regex,
     foreach(Resource * resource, resources) {
         progress.setValue(progress_value++);
         qApp->processEvents();
-        count += ReplaceInFile(search_regex, replacement, resource, search_type);
+        count += ReplaceInFile(search_regex, replacement, resource, search_type, exclude_html_tag);
     }
     return count;
 }
@@ -79,13 +81,14 @@ int SearchOperations::ReplaceInAllFIles(const QString &search_regex,
 int SearchOperations::CountInFile(const QString &search_regex,
                                   Resource *resource,
                                   SearchType search_type,
-                                  bool check_spelling)
+                                  bool check_spelling,
+								  bool exclude_html_tag)
 {
     QReadLocker locker(&resource->GetLock());
     HTMLResource *html_resource = qobject_cast<HTMLResource *>(resource);
 
     if (html_resource) {
-        return CountInHTMLFile(search_regex, html_resource, search_type, check_spelling);
+        return CountInHTMLFile(search_regex, html_resource, search_type, check_spelling, exclude_html_tag);
     }
 
     TextResource *text_resource = qobject_cast<TextResource *>(resource);
@@ -98,12 +101,11 @@ int SearchOperations::CountInFile(const QString &search_regex,
     return 0;
 }
 
-
-
 int SearchOperations::CountInHTMLFile(const QString &search_regex,
                                       HTMLResource *html_resource,
                                       SearchType search_type,
-                                      bool check_spelling)
+                                      bool check_spelling,
+									  bool exclude_html_tag)
 {
     if (search_type == SearchOperations::CodeViewSearch) {
         const QString &text = html_resource->GetText();
@@ -111,9 +113,33 @@ int SearchOperations::CountInHTMLFile(const QString &search_regex,
         if (check_spelling) {
             return HTMLSpellCheck::CountMisspelledWords(text, 0, text.count(), search_regex);
         } else {
-            return PCRECache::instance()->getObject(search_regex)->getEveryMatchInfo(text).count();
-        }
-    }
+			if (!exclude_html_tag)
+				return PCRECache::instance()->getObject(search_regex)->getEveryMatchInfo(text).count();
+			int start = 0, end = text.length(), count = 0;
+			QList<SPCRE::MatchInfo> match_info = PCRECache::instance()->getObject(search_regex)->getEveryMatchInfo(text);
+			SPCRE *spcreTagStart = PCRECache::instance()->getObject(QString("<"));
+			SPCRE *spcreTagEnd = PCRECache::instance()->getObject(QString(">"));
+
+			SPCRE::MatchInfo match_info_tag_start_before, match_info_tag_end_before;
+			SPCRE::MatchInfo match_info_tag_start_after, match_info_tag_end_after;
+
+			for (int i = match_info.count() - 1; i >= 0; i--) {
+
+				match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+				match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+
+				if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
+					(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
+					continue;
+				}
+				count++;
+			}
+			return count;
+
+		}
+	}
 
     //TODO: BookViewSearch
     return 0;
@@ -129,13 +155,14 @@ int SearchOperations::CountInTextFile(const QString &search_regex, TextResource 
 int SearchOperations::ReplaceInFile(const QString &search_regex,
                                     const QString &replacement,
                                     Resource *resource,
-                                    SearchType search_type)
+                                    SearchType search_type,
+									bool exclude_html_tag)
 {
     QWriteLocker locker(&resource->GetLock());
     HTMLResource *html_resource = qobject_cast<HTMLResource *>(resource);
 
     if (html_resource) {
-        return ReplaceHTMLInFile(search_regex, replacement, html_resource, search_type);
+        return ReplaceHTMLInFile(search_regex, replacement, html_resource, search_type, exclude_html_tag);
     }
 
     TextResource *text_resource = qobject_cast<TextResource *>(resource);
@@ -152,7 +179,8 @@ int SearchOperations::ReplaceInFile(const QString &search_regex,
 int SearchOperations::ReplaceHTMLInFile(const QString &search_regex,
                                         const QString &replacement,
                                         HTMLResource *html_resource,
-                                        SearchType search_type)
+                                        SearchType search_type,
+										bool exclude_html_tag)
 {
     SettingsStore ss;
 
@@ -187,8 +215,23 @@ std::tuple<QString, int> SearchOperations::PerformGlobalReplace(const QString &t
     int count = 0;
     SPCRE *spcre = PCRECache::instance()->getObject(search_regex);
     QList<SPCRE::MatchInfo> match_info = spcre->getEveryMatchInfo(text);
+	int start = 0, end = text.length();
+	SPCRE *spcreTagStart = PCRECache::instance()->getObject(QString("<"));
+	SPCRE *spcreTagEnd = PCRECache::instance()->getObject(QString(">"));
 
+	SPCRE::MatchInfo match_info_tag_start_before, match_info_tag_end_before;
+	SPCRE::MatchInfo match_info_tag_start_after, match_info_tag_end_after;
     for (int i =  match_info.count() - 1; i >= 0; i--) {
+		match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+		match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+		match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+		match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+
+		if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
+			(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
+			continue;
+		}
+
         QString match_segement = Utility::Substring(match_info.at(i).offset.first, match_info.at(i).offset.second, new_text);
         QString replacement_text;
 

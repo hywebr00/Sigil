@@ -838,7 +838,7 @@ bool CodeViewEditor::FindNext(const QString &search_regex,
 				search_direction, ignore_selection_offset);
 			//match_info.offset.first = -1;
 			//return false;
-			return FindNext(search_regex, search_direction, false, false, wrap, marked_text);
+			return FindNext(search_regex, search_direction, false, false, wrap, marked_text, true);
 		}
 	}
 
@@ -854,7 +854,7 @@ bool CodeViewEditor::FindNext(const QString &search_regex,
         m_lastMatch.offset.second += start_offset;
         return true;
     } else if (wrap) {
-        if (FindNext(search_regex, search_direction, misspelled_words, true, false, marked_text)) {
+        if (FindNext(search_regex, search_direction, misspelled_words, true, false, marked_text, exclude_html_tag)) {
             ShowWrapIndicator(this);
             return true;
         }

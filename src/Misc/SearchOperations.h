@@ -46,26 +46,30 @@ public:
     static int CountInFiles(const QString &search_regex,
                             QList<Resource *> resources,
                             SearchType search_type,
-                            bool check_spelling = false);
+                            bool check_spelling = false,
+							bool exclude_html_tag = false);
 
 
     static int ReplaceInAllFIles(const QString &search_regex,
                                  const QString &replacement,
                                  QList<Resource *> resources,
-                                 SearchType search_type);
+                                 SearchType search_type,
+								 bool exclude_html_tag = false);
 
 private:
 
     static int CountInFile(const QString &search_regex,
                            Resource *resource,
                            SearchType search_type,
-                           bool check_spelling);
+                           bool check_spelling,
+						   bool exclude_html_tag);
 
 
     static int CountInHTMLFile(const QString &search_regex,
                                HTMLResource *html_resource,
                                SearchType search_type,
-                               bool check_spelling);
+                               bool check_spelling,
+							   bool exclude_html_tag);
 
 
     static int CountInTextFile(const QString &search_regex,
@@ -74,12 +78,14 @@ private:
     static int ReplaceInFile(const QString &search_regex,
                              const QString &replacement,
                              Resource *resource,
-                             SearchType search_type);
+                             SearchType search_type,
+							 bool exclude_html_tag = false);
 
     static int ReplaceHTMLInFile(const QString &search_regex,
                                  const QString &replacement,
                                  HTMLResource *html_resource,
-                                 SearchType search_type);
+                                 SearchType search_type,
+								 bool exclude_html_tag);
 
     static int ReplaceTextInFile(const QString &search_regex,
                                  const QString &replacement,

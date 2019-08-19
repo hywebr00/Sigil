@@ -415,7 +415,7 @@ int FindReplace::ReplaceAll()
         if (!m_OptionWrap) {
             Searchable *searchable = GetAvailableSearchable();
             if (searchable) {
-                count += searchable->ReplaceAll(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), GetSearchableDirection(), m_OptionWrap);
+                count += searchable->ReplaceAll(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), GetSearchableDirection(), m_OptionWrap, IsMarkedText(), GetSearchMode() == FindReplace::SearchMode_Text);
             }
         }
     }
@@ -751,7 +751,9 @@ int FindReplace::CountInFiles()
     return SearchOperations::CountInFiles(
                GetSearchRegex(),
                html_files,
-               SearchOperations::CodeViewSearch);
+			   SearchOperations::CodeViewSearch,
+			   false,
+			   GetSearchMode() == FindReplace::SearchMode_Text);
 }
 
 
@@ -783,7 +785,7 @@ bool FindReplace::FindInAllFiles(Searchable::Direction direction)
         searchable = GetAvailableSearchable();
 
         if (searchable) {
-            found = searchable->FindNext(GetSearchRegex(), direction, m_SpellCheck, false, false);
+            found = searchable->FindNext(GetSearchRegex(), direction, m_SpellCheck, false, false, false, GetSearchMode() == FindReplace::SearchMode_Text);
         }
     }
 
