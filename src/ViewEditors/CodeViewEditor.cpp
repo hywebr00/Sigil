@@ -761,10 +761,15 @@ bool CodeViewEditor::FindNext(const QString &search_regex,
                               bool misspelled_words,
                               bool ignore_selection_offset,
                               bool wrap,
-                              bool marked_text)
+							  bool marked_text,
+							  bool exclude_html_tag)
 {
     SPCRE *spcre = PCRECache::instance()->getObject(search_regex);
+	SPCRE *spcreTagStart = PCRECache::instance()->getObject(QString("<"));
+	SPCRE *spcreTagEnd = PCRECache::instance()->getObject(QString(">"));
     SPCRE::MatchInfo match_info;
+	SPCRE::MatchInfo match_info_tag_start_before, match_info_tag_end_before;
+	SPCRE::MatchInfo match_info_tag_start_after, match_info_tag_end_after;
     QString txt = toPlainText();
     int start_offset = 0;
     int start = 0;
@@ -803,6 +808,40 @@ bool CodeViewEditor::FindNext(const QString &search_regex,
         }
     }
 
+	if (exclude_html_tag && match_info.offset.first != -1) {
+		if (search_direction == Searchable::Direction_Up) {
+			match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(start + match_info.offset.second, end, toPlainText()));
+			match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(start + match_info.offset.second, end, toPlainText()));
+			match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info.offset.first, toPlainText()));
+			match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info.offset.first, toPlainText()));
+		}
+		else {
+			match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(selection_offset + match_info.offset.second, end, toPlainText()));
+			match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(selection_offset + match_info.offset.second, end, toPlainText()));
+			match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, selection_offset + match_info.offset.first, toPlainText()));
+			match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, selection_offset + match_info.offset.first, toPlainText()));
+		}
+		if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
+			(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
+
+			//QTextCursor c = textCursor();
+			//bool moveResult = false;
+			//if (search_direction == Searchable::Direction_Up) {
+			//	moveResult = c.movePosition(QTextCursor::PreviousCharacter, QTextCursor::MoveMode::MoveAnchor, selection_offset - match_info_script_start_before.offset.first );
+			//}
+			//else {
+			//	moveResult = c.movePosition(QTextCursor::NextCharacter, QTextCursor::MoveMode::MoveAnchor, match_info.offset.second + match_info_script_end_after.offset.second);
+			//}
+			//setTextCursor(c);
+
+			MoveCursor(match_info.offset.first + start_offset, match_info.offset.second + start_offset,
+				search_direction, ignore_selection_offset);
+			//match_info.offset.first = -1;
+			//return false;
+			return FindNext(search_regex, search_direction, false, false, wrap, marked_text);
+		}
+	}
+
     if (match_info.offset.first != -1) {
         // We will scroll the position on screen in order to ensure the entire block is visible
         // and if not, then center the match.
@@ -824,13 +863,13 @@ bool CodeViewEditor::FindNext(const QString &search_regex,
     return false;
 }
 
-
-int CodeViewEditor::Count(const QString &search_regex, Searchable::Direction direction, bool wrap, bool marked_text)
+int CodeViewEditor::Count(const QString &search_regex, Searchable::Direction direction, bool wrap, bool marked_text, bool exclude_html_tag)
 {
     SPCRE *spcre = PCRECache::instance()->getObject(search_regex);
     QString text= toPlainText();
     int start = 0;
     int end = text.length();
+	int count = 0;
 
     if (marked_text) {
         if (!MoveToMarkedText(direction, wrap)) {
@@ -848,15 +887,49 @@ int CodeViewEditor::Count(const QString &search_regex, Searchable::Direction dir
     } else if (marked_text) {
         text = Utility::Substring(start, end, text);
     }
-    return spcre->getEveryMatchInfo(text).count();
+	QList<SPCRE::MatchInfo> match_info = spcre->getEveryMatchInfo(text);
+	SPCRE *spcreTagStart = PCRECache::instance()->getObject(QString("<"));
+	SPCRE *spcreTagEnd = PCRECache::instance()->getObject(QString(">"));
+	SPCRE::MatchInfo match_info_tag_start_before, match_info_tag_end_before;
+	SPCRE::MatchInfo match_info_tag_start_after, match_info_tag_end_after;
+	if (exclude_html_tag) {
+		for (int i = match_info.count() - 1; i >= 0; i--) {
+			if (direction == Searchable::Direction_Up) {
+				match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+				match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+			}
+			else {
+				match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+				match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+			}
+			if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
+				(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
+				continue;
+			}
+			count++;
+		}
+		return count;
+	}
+
+	return spcre->getEveryMatchInfo(text).count();
 }
 
-
-bool CodeViewEditor::ReplaceSelected(const QString &search_regex, const QString &replacement, Searchable::Direction direction, bool replace_current)
+bool CodeViewEditor::ReplaceSelected(const QString &search_regex, const QString &replacement, Searchable::Direction direction, bool replace_current, bool exclude_html_tag)
 {
     SPCRE *spcre = PCRECache::instance()->getObject(search_regex);
+	SPCRE *spcreTagStart = PCRECache::instance()->getObject(QString("<"));
+	SPCRE *spcreTagEnd = PCRECache::instance()->getObject(QString(">"));
+
+	SPCRE::MatchInfo match_info_tag_start_before, match_info_tag_end_before;
+	SPCRE::MatchInfo match_info_tag_start_after, match_info_tag_end_after;
     int selection_start = textCursor().selectionStart();
     int selection_end = textCursor().selectionEnd();
+	int start = 0;
+	int end = toPlainText().length();
 
     // It is only safe to do a replace if we have not changed the selection or find text
     // since we last did a Find.
@@ -866,6 +939,26 @@ bool CodeViewEditor::ReplaceSelected(const QString &search_regex, const QString 
 
     // Convert to plain text or \s won't get newlines
     const QString &document_text = toPlainText();
+	if (exclude_html_tag) {
+		if (direction == Searchable::Direction_Up) {
+			match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(selection_end, end, document_text));
+			match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(selection_end, end, document_text));
+			match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, selection_start, document_text));
+			match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, selection_start, document_text));
+		}
+		else {
+			match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(selection_end, end, document_text));
+			match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(selection_end, end, document_text));
+			match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, selection_start, document_text));
+			match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, selection_start, document_text));
+		}
+		if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
+			(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
+
+			return false;
+		}
+	}
+
     QString selected_text = Utility::Substring(selection_start, selection_end, document_text);
     QString replaced_text;
     bool replacement_made = false;
@@ -927,10 +1020,13 @@ int CodeViewEditor::ReplaceAll(const QString &search_regex,
                                const QString &replacement,
                                Searchable::Direction direction,
                                bool wrap,
-                               bool marked_text)
+                               bool marked_text,
+							   bool exclude_html_tag)
 {
     int count = 0;
     QString text = toPlainText();
+	int start = 0;
+	int end = text.length();
     int original_position = textCursor().position();
     int position = original_position;
     if (marked_text) {
@@ -946,11 +1042,32 @@ int CodeViewEditor::ReplaceAll(const QString &search_regex,
 
     SPCRE *spcre = PCRECache::instance()->getObject(search_regex);
     QList<SPCRE::MatchInfo> match_info = spcre->getEveryMatchInfo(text);
-
+	SPCRE *spcreTagStart = PCRECache::instance()->getObject(QString("<"));
+	SPCRE *spcreTagEnd = PCRECache::instance()->getObject(QString(">"));
+	SPCRE::MatchInfo match_info_tag_start_before, match_info_tag_end_before;
+	SPCRE::MatchInfo match_info_tag_start_after, match_info_tag_end_after;
     // Run though all match offsets making the replacement in reverse order.
     // This way changes in text length won't change the offsets as we make
     // our changes.
     for (int i = match_info.count() - 1; i >= 0; i--) {
+		if (exclude_html_tag) {
+			if (direction == Searchable::Direction_Up) {
+				match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+				match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+			}
+			else {
+				match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+				match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+				match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+			}
+			if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
+				(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
+				continue;
+			}
+		}
         QString replaced_text;
         if (!wrap) {
             if (direction == Searchable::Direction_Up) {
@@ -3719,6 +3836,77 @@ bool CodeViewEditor::ReformatHTMLEnabled()
 void CodeViewEditor::SetReformatHTMLEnabled(bool value)
 {
     m_reformatHTMLEnabled = value;
+}
+
+void CodeViewEditor::MoveCursor(int start_position, int end_position, Searchable::Direction direction, bool wrapped)
+{
+	// We will scroll the position on screen if necessary in order to ensure that there is a block visible
+	// before and after the text that will be selected by these positions.
+	QTextBlock start_block = document()->findBlock(start_position);
+	QTextBlock end_block = document()->findBlock(end_position);
+	bool scroll_to_center = false;
+	QTextCursor cursor = textCursor();
+
+	if (wrapped) {
+		// Set an initial cursor position at the top or bottom of the screen as appropriate
+		if (direction == Searchable::Direction_Up) {
+			cursor.movePosition(QTextCursor::End);
+			setTextCursor(cursor);
+		}
+		else {
+			cursor.movePosition(QTextCursor::Start);
+			setTextCursor(cursor);
+		}
+	}
+
+	if (direction == Searchable::Direction_Up || start_block.blockNumber() < end_block.blockNumber()) {
+		QTextBlock first_visible_block = firstVisibleBlock();
+		QTextBlock previous_block = start_block.previous();
+
+		while (previous_block.blockNumber() > 0 && previous_block.text().isEmpty()) {
+			previous_block = previous_block.previous();
+		}
+
+		if (!previous_block.isValid()) {
+			previous_block = start_block;
+		}
+
+		if (previous_block.blockNumber() < first_visible_block.blockNumber()) {
+			scroll_to_center = true;
+		}
+	}
+
+	if (direction == Searchable::Direction_Down || start_block.blockNumber() < end_block.blockNumber()) {
+		QTextBlock last_visible_block = cursorForPosition(QPoint(viewport()->width(), viewport()->height())).block();
+		QTextBlock next_block = end_block.next();
+
+		while (next_block.blockNumber() > 0 && next_block.blockNumber() < blockCount() - 1 && next_block.text().isEmpty()) {
+			next_block = next_block.next();
+		}
+
+		if (!next_block.isValid()) {
+			next_block = end_block;
+		}
+
+		if (next_block.blockNumber() > last_visible_block.blockNumber()) {
+			scroll_to_center = true;
+		}
+	}
+
+	if (direction == Searchable::Direction_Up) {
+		cursor.setPosition(end_position);
+		cursor.setPosition(start_position, QTextCursor::MoveAnchor);
+	}
+	else {
+		cursor.setPosition(start_position);
+		cursor.setPosition(end_position, QTextCursor::MoveAnchor);
+	}
+
+	setTextCursor(cursor);
+
+	if (scroll_to_center) {
+		centerCursor();
+	}
 }
 
 void CodeViewEditor::SelectAndScrollIntoView(int start_position, int end_position, Searchable::Direction direction, bool wrapped)

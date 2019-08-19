@@ -315,7 +315,10 @@ int FindReplace::Count()
             return 0;
         }
 
-        count = searchable->Count(GetSearchRegex(), GetSearchableDirection(), m_OptionWrap, IsMarkedText());
+		if (GetSearchMode() == FindReplace::SearchMode_Text)
+			count = searchable->Count(GetSearchRegex(), GetSearchableDirection(), m_OptionWrap, IsMarkedText(), true);
+		else
+			count = searchable->Count(GetSearchRegex(), GetSearchableDirection(), m_OptionWrap, IsMarkedText(), false);
     } else {
         // If wrap, all files are counted, otherwise only files before/after
         // the current file are counted, and then added to the count of current file.
@@ -401,7 +404,10 @@ int FindReplace::ReplaceAll()
             return 0;
         }
 
-        count = searchable->ReplaceAll(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), GetSearchableDirection(), m_OptionWrap, IsMarkedText());
+		if (GetSearchMode() == FindReplace::SearchMode_Text)
+			count = searchable->ReplaceAll(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), GetSearchableDirection(), m_OptionWrap, IsMarkedText(), true);
+		else
+			count = searchable->ReplaceAll(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), GetSearchableDirection(), m_OptionWrap, IsMarkedText(), false);
     } else {
         // If wrap, all files are replaced, otherwise only files before/after
         // the current file are updated, and then the current file is done.
@@ -531,7 +537,10 @@ bool FindReplace::FindText(Searchable::Direction direction)
             return found;
         }
 
-        found = searchable->FindNext(GetSearchRegex(), direction, false, false, m_OptionWrap, IsMarkedText());
+		if (GetSearchMode() == FindReplace::SearchMode_Text)
+			found = searchable->FindNext(GetSearchRegex(), direction, false, false, m_OptionWrap, IsMarkedText(), true);
+		else
+			found = searchable->FindNext(GetSearchRegex(), direction, false, false, m_OptionWrap, IsMarkedText(), false);
     } else {
         found = FindInAllFiles(direction);
     }
@@ -568,7 +577,10 @@ bool FindReplace::ReplaceText(Searchable::Direction direction, bool replace_curr
 
     // If we have the matching text selected, replace it
     // This will not do anything if matching text is not selected.
-    found = searchable->ReplaceSelected(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), direction, replace_current);
+	if (GetSearchMode() == FindReplace::SearchMode_Text)
+		found = searchable->ReplaceSelected(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), direction, replace_current, true);
+	else
+		found = searchable->ReplaceSelected(GetSearchRegex(), ui.cbReplace->lineEdit()->text(), direction, replace_current, false);
 
     // If we are not going to stay put after a simple Replace, then find next match.
     if (!replace_current) {
@@ -633,7 +645,7 @@ QString FindReplace::GetSearchRegex()
     QString search(text);
 
     // Search type
-    if (GetSearchMode() == FindReplace::SearchMode_Normal || GetSearchMode() == FindReplace::SearchMode_Case_Sensitive) {
+	if (GetSearchMode() == FindReplace::SearchMode_Normal || GetSearchMode() == FindReplace::SearchMode_Case_Sensitive || GetSearchMode() == FindReplace::SearchMode_Text) {
         search = QRegularExpression::escape(search);
 
         if (GetSearchMode() == FindReplace::SearchMode_Normal) {
@@ -974,6 +986,10 @@ FindReplace::SearchMode FindReplace::GetSearchMode()
     int mode = ui.cbSearchMode->itemData(ui.cbSearchMode->currentIndex()).toInt();
 
     switch (mode) {
+		case FindReplace::SearchMode_Text:
+			return static_cast<FindReplace::SearchMode>(mode);
+			break;
+
         case FindReplace::SearchMode_Regex:
             return static_cast<FindReplace::SearchMode>(mode);
             break;
@@ -1425,7 +1441,9 @@ void FindReplace::ExtendUI()
     mode_tooltip += "<dt><b>" + tr("Case Sensitive") + "</b><dd>" + tr("Case sensitive search of exactly what you type.") + "</dd>";
     ui.cbSearchMode->addItem(tr("Regex"), FindReplace::SearchMode_Regex);
     mode_tooltip += "<dt><b>" + tr("Regex") + "</b><dd>" + tr("Search for a pattern using Regular Expression syntax.") + "</dd>";
-    ui.cbSearchMode->setToolTip(mode_tooltip);
+	ui.cbSearchMode->addItem(tr("Text"), FindReplace::SearchMode_Text);
+	mode_tooltip += "<dt><b>" + tr("Text") + "</b><dd>" + tr("Case sensitive search outside html tags.") + "</dd>";
+	ui.cbSearchMode->setToolTip(mode_tooltip);
 
     QString look_tooltip = "<p>" + tr("Where to search") + ":</p><dl>";
     ui.cbLookWhere->addItem(tr("Current File"), FindReplace::LookWhere_CurrentFile);
