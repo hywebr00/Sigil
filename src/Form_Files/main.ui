@@ -576,6 +576,8 @@
    <addaction name="actionTextDirectionLTR"/>
    <addaction name="actionTextDirectionRTL"/>
    <addaction name="actionTextDirectionDefault"/>
+   <addaction name="separator"/>
+   <addaction name="actionColorDialog"/>
   </widget>
   <widget class="QToolBar" name="toolBarClips">
    <property name="windowTitle">
@@ -2357,6 +2359,19 @@
   <action name="actionNewFullImageFile">
    <property name="text">
     <string>Full Image File</string>
+   </property>
+  </action>
+  <action name="actionColorDialog">
+   <property name="icon">
+    <iconset>
+     <normalon>:/main/color-dialog_48px.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Color Dialogue</string>
+   </property>
+   <property name="toolTip">
+    <string>Pick up a color</string>
    </property>
   </action>
  </widget>

@@ -604,6 +604,9 @@ private slots:
     void ApplyHeadingStyleToTab(const QString &heading_type);
     void SetPreserveHeadingAttributes(bool new_state);
 
+	void updatePalette();
+	void colorChanged(QColor);
+
     void GoBackFromLinkOrStyle();
     void GoToBookmark(LocationBookmark *locationBookmark);
 

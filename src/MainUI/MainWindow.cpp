@@ -44,6 +44,7 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <QDebug>
+#include <QColorDialog>
 
 #include "BookManipulation/CleanSource.h"
 #include "BookManipulation/Index.h"
@@ -3057,6 +3058,7 @@ void MainWindow::SetStateActionsCodeView()
     ui.actionTextDirectionLTR    ->setEnabled(true);
     ui.actionTextDirectionRTL    ->setEnabled(true);
     ui.actionTextDirectionDefault->setEnabled(true);
+	ui.actionColorDialog->setEnabled(true);
     ui.actionInsertBulletedList->setEnabled(false);
     ui.actionInsertNumberedList->setEnabled(false);
     ui.actionRemoveFormatting->setEnabled(true);
@@ -3143,6 +3145,7 @@ void MainWindow::SetStateActionsRawView()
     ui.actionTextDirectionLTR    ->setEnabled(false);
     ui.actionTextDirectionRTL    ->setEnabled(false);
     ui.actionTextDirectionDefault->setEnabled(false);
+	ui.actionColorDialog->setEnabled(true);
     ui.actionInsertBulletedList->setEnabled(false);
     ui.actionInsertNumberedList->setEnabled(false);
     ui.actionRemoveFormatting->setEnabled(false);
@@ -3210,6 +3213,7 @@ void MainWindow::SetStateActionsStaticView()
     ui.actionTextDirectionLTR    ->setEnabled(false);
     ui.actionTextDirectionRTL    ->setEnabled(false);
     ui.actionTextDirectionDefault->setEnabled(false);
+	ui.actionColorDialog->setEnabled(true);
     ui.actionInsertBulletedList->setEnabled(false);
     ui.actionInsertNumberedList->setEnabled(false);
     ui.actionRemoveFormatting->setEnabled(false);
@@ -4500,6 +4504,7 @@ void MainWindow::ExtendUI()
     sm->registerAction(this, ui.actionTextDirectionLTR, "MainWindow.TextDirectionLTR");
     sm->registerAction(this, ui.actionTextDirectionRTL, "MainWindow.TextDirectionRTL");
     sm->registerAction(this, ui.actionTextDirectionDefault, "MainWindow.TextDirectionDefault");
+	sm->registerAction(this, ui.actionColorDialog, "MainWindow.ColorDialog");
     sm->registerAction(this, ui.actionRemoveFormatting, "MainWindow.RemoveFormatting");
     sm->registerAction(this, ui.actionHeading1, "MainWindow.Heading1");
     sm->registerAction(this, ui.actionHeading2, "MainWindow.Heading2");
@@ -4918,6 +4923,11 @@ void MainWindow::ExtendIconSizes()
     icon.addFile(QString::fromUtf8(":/main/generate-toc_16px.png"));
     icon.addFile(QString::fromUtf8(":/main/generate-toc_22px.png"));
     ui.actionGenerateTOC->setIcon(icon);
+
+	icon = ui.actionColorDialog->icon();
+	icon.addFile(QString::fromUtf8(":/main/color-dialog_16px.png"));
+	icon.addFile(QString::fromUtf8(":/main/color-dialog_22px.png"));
+	ui.actionColorDialog->setIcon(icon);
 }
 
 
@@ -4982,6 +4992,7 @@ void MainWindow::ConnectSignalsToSlots()
     m_headingMapper->setMapping(ui.actionHeading6, "6");
     connect(ui.actionHeadingNormal, SIGNAL(triggered()), m_headingMapper, SLOT(map()));
     m_headingMapper->setMapping(ui.actionHeadingNormal, "Normal");
+	connect(ui.actionColorDialog, SIGNAL(triggered()), this, SLOT(updatePalette()));
     // File
     connect(ui.actionNew,           SIGNAL(triggered()), this, SLOT(New()));
     connect(ui.actionOpen,          SIGNAL(triggered()), this, SLOT(Open()));
@@ -5337,3 +5348,16 @@ void MainWindow::BreakTabConnections(ContentTab *tab)
     disconnect(tab,                                0, m_ClipboardHistorySelector, 0);
 }
 
+void MainWindow::updatePalette()
+{
+	QColorDialog cd(Qt::red);
+	cd.setOptions(QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog);
+	connect((const QObject*)&cd, SIGNAL(currentColorChanged(QColor)), this, SLOT(colorChanged(QColor)));
+	cd.exec();
+}
+
+void MainWindow::colorChanged(QColor color)
+{
+	QClipboard *board = QApplication::clipboard();
+	board->setText(color.name(QColor::HexRgb));
+}
