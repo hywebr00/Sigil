@@ -212,6 +212,8 @@ MainWindow::MainWindow(const QString &openfilepath, bool is_internal, QWidget *p
     ChangeSignalsWhenTabChanges(NULL, m_TabManager->GetCurrentContentTab());
     LoadInitialFile(openfilepath, is_internal);
     loadPluginsMenu();
+
+	m_TabManager->setMovable(true);
 }
 
 MainWindow::~MainWindow()
