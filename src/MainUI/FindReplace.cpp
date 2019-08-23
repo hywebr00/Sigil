@@ -813,12 +813,12 @@ bool FindReplace::FindInAllFiles(Searchable::Direction direction)
             searchable = GetAvailableSearchable();
 
             if (searchable) {
-                found = searchable->FindNext(GetSearchRegex(), direction, m_SpellCheck, true, false);
+                found = searchable->FindNext(GetSearchRegex(), direction, m_SpellCheck, true, false, false, GetSearchMode() == FindReplace::SearchMode_Text);
             }
         } else {
             if (searchable) {
                 // Check the part of the original file above the cursor
-                found = searchable->FindNext(GetSearchRegex(), direction, m_SpellCheck, false, false);
+                found = searchable->FindNext(GetSearchRegex(), direction, m_SpellCheck, false, false, false, GetSearchMode() == FindReplace::SearchMode_Text);
             }
         }
     }
