@@ -581,19 +581,21 @@ void ImportEPUB::LocateOPF()
         container.addData(Utility::ReadUnicodeTextFile(fullpath));
     }
 
+    int num_opf = 0;
+
     while (!container.atEnd()) {
         container.readNext();
 
-        if (container.isStartElement() &&
-            container.name() == "rootfile"
-           ) {
+        if (container.isStartElement() && container.name() == "rootfile") {
             if (container.attributes().hasAttribute("media-type") &&
-                container.attributes().value("", "media-type") == OEBPS_MIMETYPE
-               ) {
-                m_OPFFilePath = m_ExtractedFolderPath + "/" + container.attributes().value("", "full-path").toString();
+                container.attributes().value("", "media-type") == OEBPS_MIMETYPE) {
                 // As per OCF spec, the first rootfile element
                 // with the OEBPS mimetype is considered the "main" one.
-                break;
+	        if (m_OPFFilePath.isEmpty()) {
+                    m_OPFFilePath = m_ExtractedFolderPath + "/" + container.attributes().value("", "full-path").toString();
+		}
+		num_opf++;
+
             }
         }
     }
@@ -605,6 +607,10 @@ void ImportEPUB::LocateOPF()
                               .arg(container.columnNumber())
                               .arg(container.errorString());
         throw (EPUBLoadParseError(error.toStdString()));
+    }
+
+    if (num_opf > 1) {
+        Utility::DisplayStdWarningDialog(tr("This epub has multiple renditions (multiple OPF files). Editing this epub in Sigil will produce a normal single rendition epub using only the main (first) OPF file found."),"");
     }
 
     if (m_OPFFilePath.isEmpty() || !QFile::exists(m_OPFFilePath)) {
@@ -739,9 +745,7 @@ void ImportEPUB::ReadManifestItemElement(QXmlStreamReader *opf_reader)
     // find the epub root relative file path from the opf location and the item href
     QString file_path = m_opfDir.absolutePath() + "/" + href;
     qDebug() << "creating manifest file path from: " << file_path;
-    QFileInfo fi(file_path);
-    file_path = fi.canonicalFilePath();
-
+    file_path = Utility::resolveRelativeSegmentsInFilePath(file_path,"/");
     file_path = file_path.remove(0, m_ExtractedFolderPath.length() + 1); 
     
     if (type != NCX_MIMETYPE && extension != NCX_EXTENSION) {
