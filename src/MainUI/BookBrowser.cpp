@@ -529,42 +529,44 @@ void BookBrowser::AddNewFullImage()
 	if (selected_files.count() == 0) {
 		return;
 	}
-	QString image_filename = selected_files.first();
 
-	Resource *current_resource = GetCurrentResource();
-	HTMLResource *current_html_resource = qobject_cast<HTMLResource *>(current_resource);
-	HTMLResource *new_html_resource = m_Book->CreateFullImageHTMLFile(current_html_resource);
-	QString version = m_Book->GetConstOPF()->GetEpubVersion();
+	foreach(QString image_filename, selected_files) {
 
-	try {
-		Resource *image_resource = m_Book->GetFolderKeeper()->GetResourceByFilename(image_filename);
-		ImageResource *image_type_resource = qobject_cast<ImageResource *>(image_resource);
-		if (image_type_resource) {
-			// Add the filename and dimensions of the image to the HTML source.
-			QString image_relative_path = "../" + image_resource->GetRelativePathToOEBPS();
-			QImage img(image_resource->GetFullPath());
-			QString text = new_html_resource->GetText();
-			QString width = QString::number(img.width());
-			QString height = QString::number(img.height());
-			text.replace("SGC_IMAGE_FILENAME", image_relative_path);
-			text.replace("SGC_IMAGE_WIDTH", width);
-			text.replace("SGC_IMAGE_HEIGHT", height);
-			new_html_resource->SetText(text);
+		Resource *current_resource = GetCurrentResource();
+		HTMLResource *current_html_resource = qobject_cast<HTMLResource *>(current_resource);
+		HTMLResource *new_html_resource = m_Book->CreateFullImageHTMLFile(current_html_resource);
+		QString version = m_Book->GetConstOPF()->GetEpubVersion();
+		
+		try {
+			Resource *image_resource = m_Book->GetFolderKeeper()->GetResourceByFilename(image_filename);
+			ImageResource *image_type_resource = qobject_cast<ImageResource *>(image_resource);
+			if (image_type_resource) {
+				// Add the filename and dimensions of the image to the HTML source.
+				QString image_relative_path = "../" + image_resource->GetRelativePathToOEBPS();
+				QImage img(image_resource->GetFullPath());
+				QString text = new_html_resource->GetText();
+				QString width = QString::number(img.width());
+				QString height = QString::number(img.height());
+				text.replace("SGC_IMAGE_FILENAME", image_relative_path);
+				text.replace("SGC_IMAGE_WIDTH", width);
+				text.replace("SGC_IMAGE_HEIGHT", height);
+				new_html_resource->SetText(text);
+			}
+			else {
+				Utility::DisplayStdErrorDialog(tr("Unexpected error. Only image files can be used for the cover."));
+			}
 		}
-		else {
-			Utility::DisplayStdErrorDialog(tr("Unexpected error. Only image files can be used for the cover."));
+		catch (ResourceDoesNotExist) {
+			//
 		}
-	}
-	catch (ResourceDoesNotExist) {
-		//
-	}
-	if (current_resource != NULL) {
-		m_Book->MoveResourceAfter(new_html_resource, current_html_resource);
-	}
+		if (current_resource != NULL) {
+			m_Book->MoveResourceAfter(new_html_resource, current_html_resource);
+		}
 
-	// Open the new file in a tab
-	emit ResourceActivated(new_html_resource);
-	emit BookContentModified();
+		// Open the new file in a tab
+		emit ResourceActivated(new_html_resource);
+		emit BookContentModified();
+	}
 	Refresh();
 }
 

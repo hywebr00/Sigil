@@ -132,6 +132,15 @@ public:
     void SetMetadata(const QList<MetaEntry> & metadata);
 
     QString GetFirstUniqueSectionName(QString extension = QString());
+	QString GetFirstUniqueFullImageHTMLName(QString extension = QString());
+
+	/**
+	 * Creates a new FullImage HTMLResource file with no stored data.
+	 * The file on disk has only placeholder text.
+	 *
+	 * @return A reference to the created FullImage HTMLResource file.
+	 */
+	HTMLResource *CreateNewFullImageHTMLFile();
 
     /**
      * Creates a new HTMLResource file with no stored data.
