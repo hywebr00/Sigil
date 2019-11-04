@@ -411,7 +411,7 @@ int FindReplace::ReplaceAll()
     } else {
         // If wrap, all files are replaced, otherwise only files before/after
         // the current file are updated, and then the current file is done.
-        count = ReplaceInAllFiles();
+        count = ReplaceInAllFiles(GetSearchMode() == FindReplace::SearchMode_Text);
         if (!m_OptionWrap) {
             Searchable *searchable = GetAvailableSearchable();
             if (searchable) {
@@ -757,7 +757,7 @@ int FindReplace::CountInFiles()
 }
 
 
-int FindReplace::ReplaceInAllFiles()
+int FindReplace::ReplaceInAllFiles(bool exclude_html_tag)
 {
     // For now, this must hold
     Q_ASSERT(GetLookWhere() == FindReplace::LookWhere_AllHTMLFiles || GetLookWhere() == FindReplace::LookWhere_SelectedHTMLFiles);
@@ -771,7 +771,8 @@ int FindReplace::ReplaceInAllFiles()
                     GetSearchRegex(),
                     ui.cbReplace->lineEdit()->text(),
                     html_files,
-                    SearchOperations::CodeViewSearch);
+                    SearchOperations::CodeViewSearch,
+					exclude_html_tag);
     return count;
 }
 

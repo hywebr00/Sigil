@@ -188,7 +188,7 @@ int SearchOperations::ReplaceHTMLInFile(const QString &search_regex,
         int count;
         QString new_text;
         QString text = html_resource->GetText();
-        std::tie(new_text, count) = PerformGlobalReplace(text, search_regex, replacement);
+        std::tie(new_text, count) = PerformGlobalReplace(text, search_regex, replacement, exclude_html_tag);
         html_resource->SetText(new_text);
         return count;
     }
@@ -209,37 +209,54 @@ int SearchOperations::ReplaceTextInFile(const QString &search_regex,
 
 std::tuple<QString, int> SearchOperations::PerformGlobalReplace(const QString &text,
         const QString &search_regex,
-        const QString &replacement)
+        const QString &replacement,
+		bool exclude_html_tag)
 {
-    QString new_text = text;
-    int count = 0;
-    SPCRE *spcre = PCRECache::instance()->getObject(search_regex);
-    QList<SPCRE::MatchInfo> match_info = spcre->getEveryMatchInfo(text);
+	QString new_text = text;
+	int count = 0;
+	SPCRE *spcre = PCRECache::instance()->getObject(search_regex);
+	QList<SPCRE::MatchInfo> match_info = spcre->getEveryMatchInfo(text);
 	int start = 0, end = text.length();
 	SPCRE *spcreTagStart = PCRECache::instance()->getObject(QString("<"));
 	SPCRE *spcreTagEnd = PCRECache::instance()->getObject(QString(">"));
 
 	SPCRE::MatchInfo match_info_tag_start_before, match_info_tag_end_before;
 	SPCRE::MatchInfo match_info_tag_start_after, match_info_tag_end_after;
-    for (int i =  match_info.count() - 1; i >= 0; i--) {
-		match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
-		match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
-		match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
-		match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
 
-		if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
-			(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
-			continue;
+	if (exclude_html_tag)
+	{
+		for (int i = match_info.count() - 1; i >= 0; i--) {
+			match_info_tag_start_after = spcreTagStart->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+			match_info_tag_end_after = spcreTagEnd->getFirstMatchInfo(Utility::Substring(match_info[i].offset.second, end, text));
+			match_info_tag_start_before = spcreTagStart->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+			match_info_tag_end_before = spcreTagEnd->getLastMatchInfo(Utility::Substring(start, match_info[i].offset.first, text));
+
+			if ((match_info_tag_start_before.offset.first != -1 && (match_info_tag_end_before.offset.first == -1 || (match_info_tag_end_before.offset.first != -1 && match_info_tag_end_before.offset.second < match_info_tag_start_before.offset.second))) &&
+				(match_info_tag_end_after.offset.first != -1 && (match_info_tag_start_after.offset.first == -1 || (match_info_tag_start_after.offset.first != -1 && match_info_tag_end_after.offset.second < match_info_tag_start_after.offset.second)))) {
+				continue;
+			}
+
+			QString match_segement = Utility::Substring(match_info.at(i).offset.first, match_info.at(i).offset.second, new_text);
+			QString replacement_text;
+
+			if (spcre->replaceText(match_segement, match_info.at(i).capture_groups_offsets, replacement, replacement_text)) {
+				new_text.replace(match_info.at(i).offset.first, match_info.at(i).offset.second - match_info.at(i).offset.first, replacement_text);
+				count++;
+			}
 		}
+	}
+	else
+	{
+		for (int i = match_info.count() - 1; i >= 0; i--) {
+			QString match_segement = Utility::Substring(match_info.at(i).offset.first, match_info.at(i).offset.second, new_text);
+			QString replacement_text;
 
-        QString match_segement = Utility::Substring(match_info.at(i).offset.first, match_info.at(i).offset.second, new_text);
-        QString replacement_text;
-
-        if (spcre->replaceText(match_segement, match_info.at(i).capture_groups_offsets, replacement, replacement_text)) {
-            new_text.replace(match_info.at(i).offset.first, match_info.at(i).offset.second - match_info.at(i).offset.first, replacement_text);
-            count++;
-        }
-    }
+			if (spcre->replaceText(match_segement, match_info.at(i).capture_groups_offsets, replacement, replacement_text)) {
+				new_text.replace(match_info.at(i).offset.first, match_info.at(i).offset.second - match_info.at(i).offset.first, replacement_text);
+				count++;
+			}
+		}
+	}
 
     return std::make_tuple(new_text, count);
 }

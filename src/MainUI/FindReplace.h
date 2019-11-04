@@ -205,7 +205,7 @@ private:
 
     int CountInFiles();
 
-    int ReplaceInAllFiles();
+    int ReplaceInAllFiles(bool exclude_html_tag);
 
     bool FindInAllFiles(Searchable::Direction direction);
 

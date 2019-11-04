@@ -93,7 +93,8 @@ private:
 
     static std::tuple<QString, int> PerformGlobalReplace(const QString &text,
             const QString &search_regex,
-            const QString &replacement);
+            const QString &replacement,
+			bool exclude_html_tag);
 
     static std::tuple<QString, int> PerformHTMLSpellCheckReplace(const QString &text,
             const QString &search_regex,
