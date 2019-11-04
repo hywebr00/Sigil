@@ -1,6 +1,6 @@
 /************************************************************************
 **
-**  Copyright (C) 2016-2019 Kevin B. Hendricks, Stratford, Ontario, Canada
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford, Ontario, Canada
 **  Copyright (C) 2012-2015 John Schember <john@nachtimwald.com>
 **  Copyright (C) 2012 Dave Heiland
 **  Copyright (C) 2009-2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
@@ -154,7 +154,7 @@ public:
      * The location of the last bookmark.
      */
     struct LocationBookmark {
-        QString filename;
+        QString bookpath;
         QString bv_caret_location_update;
         int cv_cursor_position;
     };
@@ -227,9 +227,13 @@ public slots:
 
     void runPlugin(QAction *action);
 
-    void ResourcesAddedOrDeleted();
+    void ResourcesAddedOrDeletedOrMoved();
 
     void launchExternalXEditor();
+
+    void StandardizeEpub();
+
+    void CreateEpubLayout();
 
 signals:
     void SettingsChanged();
@@ -626,7 +630,7 @@ private slots:
     void DeleteReportsStyles(QList<BookReports::StyleData *> reports_styles_to_delete);
 
     void DeleteFilenames(QStringList files_to_delete);
-    void OpenFile(QString filename, int line = -1);
+    void OpenFile(QString file_shortpathname, int line = -1);
 
     void UpdateClipsUI();
 
@@ -679,7 +683,7 @@ private:
      * Creates a new, empty book and replaces
      * the current one with it.
      */
-    void CreateNewBook();
+    void CreateNewBook(const QStringList &book_paths=QStringList());
 
     /**
      * Saves the current book to the file specified.
@@ -810,6 +814,9 @@ private:
     void BreakTabConnections(ContentTab *tab);
 
     void SetupPreviewTimer();
+
+    void FixDuplicateFilenames();
+    void MoveContentFilesToStdFolders();
 
     ///////////////////////////////
     // PRIVATE MEMBER VARIABLES
@@ -989,6 +996,7 @@ private:
 
     QStringList m_pluginList;
     bool m_SaveCSS;
+    bool m_IsClosing;
 
     QList<QAction*> m_qlactions;
     /**

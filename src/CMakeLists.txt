@@ -139,10 +139,14 @@ set( DIALOG_FILES
     Dialogs/DeleteStyles.h
     Dialogs/EditTOC.cpp
     Dialogs/EditTOC.h
+    Dialogs/EmptyLayout.cpp
+    Dialogs/EmptyLayout.h
     Dialogs/OpenWithName.cpp
     Dialogs/OpenWithName.h
     Dialogs/SelectCharacter.cpp
     Dialogs/SelectCharacter.h
+    Dialogs/SelectFolder.cpp
+    Dialogs/SelectFolder.h
     Dialogs/SelectHyperlink.cpp
     Dialogs/SelectHyperlink.h
     Dialogs/SelectId.cpp
@@ -322,6 +326,8 @@ set( MISC_FILES
     Misc/PythonRoutines.cpp
     Misc/TextDocument.h
     Misc/TextDocument.cpp
+    Misc/MediaTypes.cpp
+    Misc/MediaTypes.h
     )
 
 set( MISC_EDITORS_FILES
@@ -433,11 +439,13 @@ set( UI_FILES
     Form_Files/DeleteStyles.ui
     Form_Files/OpenWithName.ui
     Form_Files/SelectCharacter.ui
+    Form_Files/SelectFolder.ui
     Form_Files/SelectHyperlink.ui
     Form_Files/SelectId.ui
     Form_Files/SelectIndexTitle.ui
     Form_Files/SelectFiles.ui
     Form_Files/MetaEditor.ui
+    Form_Files/EmptyLayout.ui
     Form_Files/AddMetadata.ui
     Form_Files/AddSemantics.ui
     Form_Files/About.ui

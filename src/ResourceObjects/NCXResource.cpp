@@ -1,7 +1,7 @@
 /************************************************************************
 **
-**  Copyright (C) 2016 Kevin B. Hendricks, Stratford, Ontario, Canada
-**  Copyright (C) 2009, 2010, 2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
+**  Copyright (C) 2016-2019 Kevin B. Hendricks, Stratford, Ontario, Canada
+**  Copyright (C) 2009-2011 Strahinja Markovic  <strahinja.markovic@gmail.com>
 **
 **  This file is part of Sigil.
 **
@@ -90,11 +90,21 @@ NCXResource::NCXResource(const QString &mainfolder, const QString &fullfilepath,
     SaveToDisk();
 }
 
-
+// a rename of the ncx should only need updating in the opf
+// which should happen automagically via signals and slots here
 bool NCXResource::RenameTo(const QString &new_filename)
 {
-    // The user is not allowed to rename the NCX file.
-    return false;
+    bool successful = Resource::RenameTo(new_filename);
+    return successful;
+}
+
+
+// a move of the ncx should need updating in the ncx and opf
+// which should happen automagically via signals and slots here
+bool NCXResource::MoveTo(const QString &newbookpath)
+{
+    bool successful = Resource::MoveTo(newbookpath);
+    return successful;
 }
 
 
@@ -161,19 +171,4 @@ void NCXResource::FillWithDefaultText()
         SetText(TEMPLATE3_TEXT.arg(tr("Start")).arg(FIRST_SECTION_NAME));
       }
 }
-
-
-QString NCXResource::GetRelativePathToRoot() const
-{
-    QFileInfo info(GetFullPath());
-    QDir parent_dir = info.dir();
-    QString parent_name = parent_dir.dirName();
-    return parent_name + "/" + Filename();
-}
-
-QString NCXResource::GetRelativePathToOEBPS() const
-{
-    return Filename();
-}
-
 

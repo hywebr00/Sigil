@@ -327,6 +327,8 @@
     <addaction name="actionAddCover"/>
     <addaction name="actionMetaEditor"/>
     <addaction name="menuTOC"/>
+    <addaction name="actionStandardize" />
+    <addaction name="actionCustomLayout" />
     <addaction name="menuIndex"/>
     <addaction name="separator"/>
     <addaction name="menuSpellCheckMenu"/>
@@ -1186,6 +1188,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+W</string>
+   </property>
+  </action>
+  <action name="actionStandardize">
+   <property name="text">
+    <string>Restructure Epub to Sigil Norm</string>
+   </property>
+   <property name="toolTip">
+    <string>Restructure Epub to Sigil Standard Form</string>
    </property>
   </action>
   <action name="actionZoomIn">
@@ -2349,6 +2359,11 @@
   <action name="actionNCXGuideFromNav">
    <property name="text">
     <string>Generate &amp;NCX/Guide for epub2 e-readers</string>
+   </property>
+  </action>
+  <action name="actionCustomLayout">
+   <property name="text">
+    <string>Create a Custom Empty Epub</string>
    </property>
   </action>
   <action name="actionRemoveNCXGuide">

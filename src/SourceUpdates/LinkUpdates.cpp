@@ -1,8 +1,8 @@
 /************************************************************************
 **
-**  Copyright (C) 2019 Kevin B. Hendricks, Stratford, Ontario Canada
-**  Copyright (C) 2012 Dave Heiland
-**  Copyright (C) 2012 John Schember <john@nachtimwald.com>
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford, Ontario Canada
+**  Copyright (C) 2012      Dave Heiland
+**  Copyright (C) 2012      John Schember <john@nachtimwald.com>
 **
 **  This file is part of Sigil.
 **
@@ -44,10 +44,11 @@ void LinkUpdates::UpdateLinksInOneFile(HTMLResource *html_resource, QList<QStrin
     Q_ASSERT(html_resource);
 
     QString newcsslinks;
-    // build the new stylesheet links
+    // build the new stylesheet links new_stylesheets is a list of stylesheet bookpaths
     foreach(QString stylesheet, new_stylesheets) {
-        stylesheet = Utility::URLEncodePath(stylesheet);
-        newcsslinks += "<link href=\"" + stylesheet + "\" type=\"text/css\" rel=\"stylesheet\"/>\n";
+        QString ahref = Utility::buildRelativePath(html_resource->GetRelativePath(), stylesheet);
+        ahref = Utility::URLEncodePath(ahref);
+        newcsslinks += "<link href=\"" + ahref + "\" type=\"text/css\" rel=\"stylesheet\"/>\n";
     }
     QWriteLocker locker(&html_resource->GetLock());
     QString newsource = html_resource->GetText();

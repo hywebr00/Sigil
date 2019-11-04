@@ -59,13 +59,6 @@ public:
     ~Book();
 
     /**
-     * Returns the base url of the book.
-     * This is the location of the text folder
-     * within the main folder.
-     */
-    QUrl GetBaseUrl() const;
-
-    /**
      * Returns the FolderKeeper instance.
      *
      * @return A reference to the FolderKeeper instance of the Book.
@@ -99,6 +92,8 @@ public:
      * @return The NCX.
      */
     NCXResource *GetNCX();
+
+    const NCXResource *GetConstNCX() const;
 
     /**
      * Returns the book's publication identifier.
@@ -148,7 +143,7 @@ public:
      *
      * @return A reference to the created HTMLResource file.
      */
-    HTMLResource *CreateNewHTMLFile();
+    HTMLResource *CreateNewHTMLFile(const QString &folderpath = QString("\\"));
 
     /**
      * Moves the first resource to after the second resource
@@ -159,7 +154,7 @@ public:
      * Creates a new HTMLResource file with a basic XHTML structure.
      * The file on disk has only placeholder text.
      */
-    HTMLResource *CreateEmptyHTMLFile();
+    HTMLResource *CreateEmptyHTMLFile(const QString &folderpath = QString("\\"));
 
 	/**
 	* Creates a new HTMLResource file with a basic XHTML structure
@@ -171,22 +166,24 @@ public:
     /**
      * Creates a new HTML Nav file with a basic nav structure.
      */
-    HTMLResource *CreateEmptyNavFile(bool update_opf = false);
+    HTMLResource *CreateEmptyNavFile(bool update_opf = false, 
+				     const QString &folderpath=QString("\\"), 
+				     const QString &navname=QString("nav.xhtml"));
 
     /**
      * Creates a new HTMLResource file with a basic XHTML structure
      * inserted after the given resource.
      * The file on disk has only placeholder text.
      */
-    HTMLResource *CreateEmptyHTMLFile(HTMLResource *resource);
+    HTMLResource *CreateEmptyHTMLFile(HTMLResource *resource, const QString &folderpath = QString("\\"));
 
     /**
      * Creates a new CSSResource file with no stored data.
      * The file on disk is empty.
      */
-    CSSResource *CreateEmptyCSSFile();
+    CSSResource *CreateEmptyCSSFile(const QString &folderpath = QString("\\"));
 
-    SVGResource *CreateEmptySVGFile();
+    SVGResource *CreateEmptySVGFile(const QString &folderpath = QString("\\"));
 
     HTMLResource *CreateHTMLCoverFile(QString text);
 
@@ -240,9 +237,7 @@ public:
     QHash<QString, QStringList> GetHrefsInHTMLFiles();
     static std::tuple<QString, QStringList> GetHrefsInHTMLFileMapped(HTMLResource *html_resource);
 
-    QHash<QString, QStringList> GetClassesInHTMLFiles();
-    static std::tuple<QString, QStringList> GetClassesInHTMLFileMapped(HTMLResource *html_resource);
-    QStringList GetClassesInHTMLFile(QString filename);
+    QStringList GetClassesInHTMLFile(HTMLResource* html_resource);
 
     QSet<QString> GetWordsInHTMLFiles();
     static QStringList GetWordsInHTMLFileMapped(HTMLResource *html_resource);
@@ -389,6 +384,9 @@ private:
 
         // Extension to use for the filename.
         QString file_extension;
+
+        // ebook relative folder path where the new section should be placed
+        QString folder_path;
 
     };
 
