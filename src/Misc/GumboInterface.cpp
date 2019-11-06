@@ -118,9 +118,11 @@ GumboInterface::GumboInterface(const QString &source, const QString &version)
           m_utf8src(""),
           m_sourceupdates(EmptyHash),
           m_newcsslinks(""),
+          m_currentbkpath(""),
           m_currentdir(""),
           m_newbody(""),
-          m_version(version)
+          m_version(version),
+	  m_newbookpath("")
 {
 }
 
@@ -131,9 +133,11 @@ GumboInterface::GumboInterface(const QString &source, const QString &version, co
           m_utf8src(""),
           m_sourceupdates(source_updates),
           m_newcsslinks(""),
+          m_currentbkpath(""),
           m_currentdir(""),
           m_newbody(""),
-          m_version(version)
+          m_version(version),
+	  m_newbookpath("")
 {
 }
 
@@ -239,9 +243,12 @@ QStringList GumboInterface::get_all_properties()
 }
 
 
-QString GumboInterface::perform_source_updates(const QString& my_current_book_relpath)
+QString GumboInterface::perform_source_updates(const QString& my_current_book_relpath,
+					       const QString& newbookpath)
 {
-    m_currentdir = QFileInfo(my_current_book_relpath).dir().path();
+    m_currentbkpath = my_current_book_relpath;
+    m_currentdir = QFileInfo(m_currentbkpath).dir().path();
+    m_newbookpath = newbookpath;
     QString result = "";
     if (!m_source.isEmpty()) {
         if (m_output == NULL) {
@@ -256,9 +263,13 @@ QString GumboInterface::perform_source_updates(const QString& my_current_book_re
 }
 
 
-QString GumboInterface::perform_style_updates(const QString& my_current_book_relpath)
+QString GumboInterface::perform_style_updates(const QString& my_current_book_relpath,
+					      const QString& newbookpath)
 {
-    m_currentdir = QFileInfo(my_current_book_relpath).dir().path();
+    m_currentbkpath = my_current_book_relpath;
+    m_currentdir = QFileInfo(m_currentbkpath).dir().path();
+    m_newbookpath = newbookpath;
+    
     QString result = "";
     if (!m_source.isEmpty()) {
         if (m_output == NULL) {
@@ -810,22 +821,27 @@ void GumboInterface::replace_all(std::string &s, const char * s1, const char * s
 
 std::string GumboInterface::update_attribute_value(const std::string &attvalue)
 {
-    std::string result = attvalue; 
+    std::string result = attvalue;
+    if (attvalue.find(":") != std::string::npos) return attvalue;
     QString attpath = Utility::URLDecodePath(QString::fromStdString(attvalue));
-    int fragpos = attpath.lastIndexOf(POUND_SIGN);
-    bool has_fragment = fragpos != -1;
-    QString fragment = "";
-    if (has_fragment) {
-        fragment = attpath.mid(fragpos, -1);
-        attpath = attpath.mid(0, fragpos);
+    std::pair<QString, QString> parts = Utility::parseHREF(attpath);
+    QString fragment = parts.second;
+    attpath = parts.first;
+    QString dest_oldbkpath;
+    if (attpath.isEmpty()) {
+        dest_oldbkpath = m_currentbkpath;
+    } else {
+        dest_oldbkpath = Utility::buildBookPath(attpath, m_currentdir);
     }
-    QString search_key = QDir::cleanPath(m_currentdir + FORWARD_SLASH + attpath);
-    QString new_href;
-    if (m_sourceupdates.contains(search_key)) {
-        new_href = m_sourceupdates.value(search_key);
-    }
-    if (!new_href.isEmpty()) {
+    // note destination may not have moved but we still need to update
+    // the link
+    QString dest_newbkpath = m_sourceupdates.value(dest_oldbkpath, dest_oldbkpath);
+    if (!dest_newbkpath.isEmpty() && !m_newbookpath.isEmpty()) {
+        QString new_href = Utility::buildRelativePath(m_newbookpath, dest_newbkpath);
         new_href += fragment;
+        // if empty then internal link to the top
+	if (new_href.isEmpty()) new_href = QFileInfo(dest_newbkpath).fileName();
+	// if (new_href.isEmpty()) new_href="#";
         new_href = Utility::URLEncodePath(new_href);
         result =  new_href.toStdString();
     } 
@@ -852,18 +868,25 @@ std::string GumboInterface::update_style_urls(const std::string &source)
             if (mo.captured(i).trimmed().isEmpty()) {
                 continue;
             }
+            if (mo.captured(i).indexOf(":") != -1) continue;
             QString apath = Utility::URLDecodePath(mo.captured(i));
-            QString search_key = QDir::cleanPath(m_currentdir + FORWARD_SLASH + apath);
-            QString new_href;
-            if (m_sourceupdates.contains(search_key)) {
-                new_href = m_sourceupdates.value(search_key);
-            }
-            if (!new_href.isEmpty()) {
-                new_href = Utility::URLEncodePath(new_href);
+	    QString dest_oldbkpath;
+	    if (apath.isEmpty()) {
+	      dest_oldbkpath = m_currentbkpath;
+	    } else {
+	      dest_oldbkpath = Utility::buildBookPath(apath, m_currentdir);
+	    }
+            // note destination may not have moved but we still need to update
+            // the link
+            QString dest_newbkpath = m_sourceupdates.value(dest_oldbkpath, dest_oldbkpath);
+	    if (!dest_newbkpath.isEmpty() && !m_newbookpath.isEmpty()) {
+		QString new_href = Utility::buildRelativePath(m_newbookpath, dest_newbkpath);
+		if (new_href.isEmpty()) new_href = QFileInfo(dest_newbkpath).fileName();
+		new_href = Utility::URLEncodePath(new_href);
                 result.replace(mo.capturedStart(i), mo.capturedLength(i), new_href);
             }
         }
-        start_index += mo.capturedLength();
+	start_index = mo.capturedEnd();
         mo = reference.match(result, start_index);
     } while (mo.hasMatch());
 

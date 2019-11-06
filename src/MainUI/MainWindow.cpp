@@ -1,7 +1,7 @@
 /************************************************************************
 **
-**  Copyright (C) 2016-2019 Kevin B. Hendricks, Stratford, Ontario Canada
-**  Copyright (C) 2019 Doug Massay
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford, Ontario Canada
+**  Copyright (C) 2019      Doug Massay
 **  Copyright (C) 2012-2015 John Schember <john@nachtimwald.com>
 **  Copyright (C) 2012-2013 Dave Heiland
 **  Copyright (C) 2009-2011 Strahinja Markovic  <strahinja.markovic@gmail.com>
@@ -54,6 +54,7 @@
 #include "Dialogs/ClipboardHistorySelector.h"
 #include "Dialogs/DeleteStyles.h"
 #include "Dialogs/EditTOC.h"
+#include "Dialogs/EmptyLayout.h"
 #include "Dialogs/HeadingSelector.h"
 #include "Dialogs/LinkStylesheets.h"
 #include "Dialogs/MetaEditor.h"
@@ -79,6 +80,7 @@
 #include "Misc/HTMLSpellCheck.h"
 #include "Misc/KeyboardShortcutManager.h"
 #include "Misc/Landmarks.h"
+#include "Misc/MediaTypes.h"
 #include "Misc/OpenExternally.h"
 #include "Misc/Plugin.h"
 #include "Misc/PluginDB.h"
@@ -192,7 +194,8 @@ MainWindow::MainWindow(const QString &openfilepath, bool is_internal, QWidget *p
     m_menuPluginsEdit(NULL),
     m_menuPluginsValidation(NULL),
     m_pluginList(QStringList()),
-    m_SaveCSS(false)
+    m_SaveCSS(false),
+    m_IsClosing(false)
 {
     ui.setupUi(this);
 
@@ -386,6 +389,169 @@ void MainWindow::unloadPluginsMenu()
     }
 }
 
+void MainWindow::StandardizeEpub()
+{
+    SaveTabData();
+
+    // ask to be sure
+    QMessageBox::StandardButton button_pressed;
+    button_pressed = QMessageBox::warning(this, tr("Sigil"), 
+				      tr("Are you sure you want to restructure this epub?\nThis action cannot be reversed."), 
+				      QMessageBox::Ok | QMessageBox::Cancel);
+    if (button_pressed != QMessageBox::Ok) {
+      return;
+    }
+    
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    // perform well-formed check on all the html resources
+    QList<HTMLResource *> htmlresources = m_Book->GetHTMLResources();
+    foreach (HTMLResource * hresource, htmlresources) {
+        if (!hresource->FileIsWellFormed()) {
+	    QMessageBox::warning(this, tr("Sigil"), 
+				 tr("Restructure cancelled: %1, XML not well formed.").arg(hresource->ShortPathName()));
+	    return;
+        }
+    }
+    // make sure opf is in good shape as well
+    OPFResource* opfresource = m_Book->GetOPF();
+    if (!opfresource->FileIsWellFormed()) {
+        QMessageBox::warning(this, tr("Sigil"),
+			     tr("Restructure cancelled: %1, XML not well formed.").arg(opfresource->ShortPathName()));
+        return;
+    }
+    // ditto for ncx if one exists
+    NCXResource* ncxresource = m_Book->GetNCX();
+    if (ncxresource && !ncxresource->FileIsWellFormed()) {
+        QMessageBox::warning(this, tr("Sigil"),
+			     tr("Restructure cancelled: %1, XML not well formed.").arg(ncxresource->ShortPathName()));
+        return;
+    }
+    // we really should parse validate each css file here but
+    // since we update css files using regular expressions, the full 
+    // parseability is really not critical
+
+    // first standardize the opf and ncx names
+    QList<Resource*> resources;
+    QStringList newfilenames;
+    QString opfname = m_Book->GetOPF()->Filename();
+    if (opfname != "content.opf") {
+        resources << m_Book->GetOPF();
+        newfilenames << "content.opf";
+    }
+    NCXResource * ncx = m_Book->GetNCX();
+    if (ncx && (ncx->Filename() != "toc.ncx")) {
+        resources << m_Book->GetNCX();
+        newfilenames << "toc.ncx";
+    }
+    if (!newfilenames.isEmpty()) {
+        m_BookBrowser->RenameResourceList(resources, newfilenames);
+    }
+    // handle any other name conflicts
+    FixDuplicateFilenames();
+
+    // handle case insensitive filesystems and clashing directory names
+    bool fs_case_sensitive = false;
+    QString mainfolder = m_Book->GetFolderKeeper()->GetFullPathToMainFolder();
+    QString apath = mainfolder + "/oebps/images";
+    QString bpath = mainfolder + "/OEBPS/Images";
+    if (QFileInfo(apath) != QFileInfo(bpath)) {
+        fs_case_sensitive = true;
+    }
+    qDebug() << "file system is case sensitive: " << fs_case_sensitive;
+
+    if (!fs_case_sensitive) {
+        // opf is first to handle OEBPS before fighting with its subdirectories
+        QStringList groups = QStringList() << "opf" << "Text" << "Styles" << "Images" 
+	                                   << "Fonts" << "Audio" << "Video" << "Misc";
+        // try renaming all matching existing directories to what we want
+        QDir mf(mainfolder);
+        foreach(QString group, groups) {
+	    QString folderpath = m_Book->GetFolderKeeper()->GetStdFolderForGroup(group);
+	    apath = mainfolder + "/" + folderpath.toLower();
+	    bpath = mainfolder + "/" + folderpath;
+	    if (QFileInfo(apath).exists() && QFileInfo(apath).isDir()) {
+	        bool result = mf.rename(folderpath.toLower(), folderpath);
+		qDebug() << "rename directory: " << folderpath << result;
+	    }
+        }
+    }
+
+    // finally move all content to their standard folders if need be
+    MoveContentFilesToStdFolders();
+
+    // update what is needed
+    m_Book->GetFolderKeeper()->updateShortPathNames();
+    QList<Resource*> allresources = m_Book->GetFolderKeeper()->GetResourceList();
+    QStringList bookpaths;
+    QStringList mtypes;
+    foreach(Resource* res, allresources) {
+        bookpaths << res->GetRelativePath();
+        mtypes << res->GetMediaType();
+    }
+    m_Book->GetFolderKeeper()->SetGroupFolders(bookpaths, mtypes);
+    m_BookBrowser->Refresh();
+    m_Book->SetModified();
+    QApplication::restoreOverrideCursor();
+    ShowMessageOnStatusBar(tr("Restructure completed."));
+}
+
+void MainWindow::FixDuplicateFilenames()
+{
+  QStringList bookpaths = m_Book->GetFolderKeeper()->GetAllBookPaths();
+    QStringList problem_bookpaths;
+    QSet<QString>UsedSet;
+  
+    foreach(QString bkpath, bookpaths) {
+        QString aname =bkpath.split('/').last().toLower();
+        if (UsedSet.contains(aname)) {
+            problem_bookpaths << bkpath;
+        }
+        UsedSet.insert(aname);
+    }
+    foreach(QString bkpath, problem_bookpaths) {
+        QString aname = bkpath.split('/').last().toLower();
+        QString newname = m_Book->GetFolderKeeper()->GetUniqueFilenameVersion(aname);
+        Resource * resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(bkpath);
+        QList<Resource*> resources = QList<Resource*>() << resource;
+        QStringList newfilenames = QStringList() << newname;
+        m_BookBrowser->RenameResourceList(resources, newfilenames);
+    }
+    return;
+}
+
+
+void MainWindow::MoveContentFilesToStdFolders()
+{
+    QList<Resource*> resources = m_Book->GetFolderKeeper()->GetResourceList();
+    QList<Resource*> resources_to_move;
+    QStringList newbookpaths;
+    QString MainFolder = m_Book->GetFolderKeeper()->GetFullPathToMainFolder();
+    QDir epub_root(MainFolder);
+    foreach(Resource* resource, resources) {
+        QString group = MediaTypes::instance()->GetGroupFromMediaType(resource->GetMediaType(), "other");
+        if ((group == "other") || group.isEmpty()) continue;
+        QString stdfolder = m_Book->GetFolderKeeper()->GetStdFolderForGroup(group);
+        QString filename = resource->Filename();
+        QString newbookpath = filename;
+        if (!stdfolder.isEmpty()) {
+            newbookpath = stdfolder + "/" + filename;
+        }
+        if (newbookpath != resource->GetRelativePath()) {
+	    // remember to create the destination directory if needed
+	    if (!stdfolder.isEmpty()) {
+	        epub_root.mkpath(stdfolder);
+	    }
+            resources_to_move << resource;
+            newbookpaths << newbookpath;
+        }
+    }
+    if (!newbookpaths.isEmpty()) {
+        m_BookBrowser->MoveResourceList(resources_to_move, newbookpaths); 
+    }
+}
+
+
 void MainWindow::launchExternalXEditor()
 {
     // Launch external xhtml editor for current tab resource
@@ -535,7 +701,7 @@ void MainWindow::ResetLinkOrStyleBookmark()
 
 void MainWindow::ResetLocationBookmark(MainWindow::LocationBookmark *locationBookmark)
 {
-    locationBookmark->filename.clear();
+    locationBookmark->bookpath.clear();
     ui.actionGoBackFromLinkOrStyle->setEnabled(false);
 }
 
@@ -547,12 +713,12 @@ void MainWindow::GoBackFromLinkOrStyle()
 
 void MainWindow::GoToBookmark(MainWindow::LocationBookmark *locationBookmark)
 {
-    if (locationBookmark->filename.isEmpty()) {
+    if (locationBookmark->bookpath.isEmpty()) {
         return;
     }
 
     try {
-        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByFilename(locationBookmark->filename);
+        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(locationBookmark->bookpath);
         OpenResource(resource, -1, locationBookmark->cv_cursor_position, locationBookmark->bv_caret_location_update);
         ShowMessageOnStatusBar();
     } catch (ResourceDoesNotExist) {
@@ -587,10 +753,10 @@ void MainWindow::BookmarkLinkOrStyleLocation()
     }
 
     Resource *current_resource = tab->GetLoadedResource();
-    m_LinkOrStyleBookmark->filename = current_resource->Filename();
+    m_LinkOrStyleBookmark->bookpath = current_resource->GetRelativePath();
     m_LinkOrStyleBookmark->cv_cursor_position = tab->GetCursorPosition();
     m_LinkOrStyleBookmark->bv_caret_location_update = tab->GetCaretLocationUpdate();
-    ui.actionGoBackFromLinkOrStyle->setEnabled(!m_LinkOrStyleBookmark->filename.isEmpty());
+    ui.actionGoBackFromLinkOrStyle->setEnabled(!m_LinkOrStyleBookmark->bookpath.isEmpty());
 }
 
 void MainWindow::ScrollCVToFragment(const QString &fragment)
@@ -619,7 +785,8 @@ void MainWindow::OpenUrl(const QUrl &url)
 
     BookmarkLinkOrStyleLocation();
 
-    if (url.scheme().isEmpty() || url.scheme() == "file") {
+    // note: TabManager generates book: urls and PreviewWindow generates file: urls
+    if (url.scheme() == "book" || url.scheme() == "file") {
         Resource *resource = m_BookBrowser->GetUrlResource(url);
 
         if (resource == NULL) {
@@ -674,7 +841,7 @@ void MainWindow::OpenResourceAndWaitUntilLoaded(Resource *resource,
 void MainWindow::ResourceUpdatedFromDisk(Resource *resource)
 {
     SettingsStore ss;
-    QString message = QString(tr("File")) + " " + resource->Filename() + " " + tr("was updated") + ".";
+    QString message = QString(tr("File")) + " " + resource->ShortPathName() + " " + tr("was updated") + ".";
     int duration = 10000;
 
     if (resource->Type() == Resource::HTMLResourceType) {
@@ -753,9 +920,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
     DBG qDebug() << "in close event before maybe save";
 
     // stop any further UpdatePreview timer actions
+    // and prevent UpdatePage from running
     if (m_PreviewTimer.isActive()) {
         m_PreviewTimer.stop();
     }
+    m_IsClosing = true;
 
     // this should be done first to save all geometry
     // and can not hurt even if close is later ignored
@@ -796,6 +965,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->accept();
     } else {
         event->ignore();
+	m_IsClosing = false;
     }
 }
 
@@ -1031,6 +1201,28 @@ bool MainWindow::SaveACopy()
     return SaveFile(filename, false);
 }
 
+
+void MainWindow::CreateEpubLayout()
+{
+    SettingsStore ss;
+    QString version = ss.defaultVersion();
+
+    EmptyLayout edesign(version, this);
+    edesign.exec();
+
+    QStringList bookpaths = edesign.GetBookPaths();
+    if (bookpaths.isEmpty()) {
+        ShowMessageOnStatusBar(tr("Epub layout discarded."));
+        return;
+    }
+ 
+    if (MaybeSaveDialogSaysProceed()) {
+        CreateNewBook(bookpaths);
+    }
+    ShowMessageOnStatusBar(tr("New epub created."));
+}
+
+
 void MainWindow::Exit()
 {
     DBG qDebug() << "In Exit";
@@ -1071,21 +1263,21 @@ void MainWindow::GoToLine()
 
 void MainWindow::ViewImageDialog(const QUrl &url)
 {
+    if (url.scheme() != "book") return;
+
     // non-modal dialog
     m_ViewImage->show();
     m_ViewImage->raise();
     m_ViewImage->activateWindow();
 
-    QString image_path = url.toString();
-    QString filename = QFileInfo(image_path).fileName();
-
+    QString image_bookpath = url.path().remove(0,1);
     try {
-        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByFilename(filename);
+        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(image_bookpath);
         if (resource->Type() == Resource::ImageResourceType || resource->Type() == Resource::SVGResourceType) {
             m_ViewImage->ShowImage(resource->GetFullPath());
         }
     } catch (ResourceDoesNotExist) {
-        QMessageBox::warning(this, tr("Sigil"), tr("Image does not exist: ") + image_path);
+        QMessageBox::warning(this, tr("Sigil"), tr("Image does not exist: ") + image_bookpath);
     }
 }
 
@@ -1109,20 +1301,11 @@ void MainWindow::GoToLinkedStyleDefinition(const QString &element_name, const QS
         QStringList stylesheets = GetStylesheetsAlreadyLinked(current_resource);
         bool found_match = false;
         CSSResource *first_css_resource = 0;
-        foreach(QString pathname, stylesheets) {
-            // Check whether the stylesheet contains this style
-            CSSResource *css_resource = NULL;
-            foreach(Resource * resource, css_resources) {
-                if (pathname == QString("../" + resource->GetRelativePathToOEBPS())) {
-                    // We have our resource matching this stylesheet.
-                    css_resource = dynamic_cast<CSSResource *>(resource);
-
-                    if (!first_css_resource) {
-                        first_css_resource = css_resource;
-                    }
-
-                    break;
-                }
+        foreach(QString bookpath, stylesheets) {
+	    Resource * resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(bookpath);
+	    CSSResource *css_resource = qobject_cast<CSSResource*>( resource ); 
+            if (!first_css_resource) {
+                first_css_resource = css_resource;
             }
             if (css_resource) {
                 CSSInfo css_info(css_resource->GetText(), true);
@@ -1257,15 +1440,15 @@ void MainWindow::AddCover()
     // Get just images, not svg files.
     QList<Resource *> image_resources = m_Book->GetFolderKeeper()->GetResourceListByType(Resource::ImageResourceType);
     QString title = tr("Add Cover");
+    // SelectFiles returns the bookpaths of all selected resources
     SelectFiles select_files(title, image_resources, m_LastInsertedFile, this);
-
+    
     if (select_files.exec() == QDialog::Accepted) {
         if (select_files.IsInsertFromDisk()) {
-            QStringList filenames = m_BookBrowser->AddExisting(false, true);
-            // Convert full path to filename.
-            foreach(QString filename, filenames) {
-                QString internal_filename = filename.right(filename.length() - filename.lastIndexOf("/") - 1);
-                selected_files.append(internal_filename);
+	    // m_BookBrowser->AddExisting returns the full file paths
+            QStringList added_book_paths = m_BookBrowser->AddExisting(false, true);
+            foreach(QString bookpath, added_book_paths) {
+                selected_files.append(bookpath);
             }
         } else {
             selected_files = select_files.SelectedImages();
@@ -1274,7 +1457,7 @@ void MainWindow::AddCover()
     if (selected_files.count() == 0) {
         return;
     }
-    QString image_filename = selected_files.first();
+    QString image_bookpath = selected_files.first();
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -1321,7 +1504,7 @@ void MainWindow::AddCover()
     }
 
     try {
-        Resource *image_resource = m_Book->GetFolderKeeper()->GetResourceByFilename(image_filename);
+        Resource *image_resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(image_bookpath);
 
         // Set cover semantics
         if (version.startsWith('3')) {
@@ -1337,7 +1520,7 @@ void MainWindow::AddCover()
             }
 
             // Add the filename and dimensions of the image to the HTML source.
-            QString image_relative_path = "../" + image_resource->GetRelativePathToOEBPS();
+            QString image_relative_path = image_resource->GetRelativePathFromResource(html_cover_resource);
             QImage img(image_resource->GetFullPath());
             QString text = html_cover_resource->GetText();
             QString width = QString::number(img.width());
@@ -1438,17 +1621,18 @@ void MainWindow::GenerateNCXGuideFromNav()
 
     // find existing nav document if there is one
     HTMLResource * nav_resource = m_Book->GetConstOPF()->GetNavResource();
-    QString navname = "";
+    QString navbkpath = "";
     QString navdata = "";
     if (nav_resource) {
         navdata = CleanSource::Mend(nav_resource->GetText(),"3.0");
-        navname = nav_resource->Filename();
+        navbkpath = nav_resource->GetRelativePath();
     }
 
     if ((!nav_resource) || navdata.isEmpty()) {
         ShowMessageOnStatusBar(tr("NCX and Guide generation failed."));
         QApplication::restoreOverrideCursor();
     }
+
 
     QList<QVariant> mvalues = m_Book->GetConstOPF()->GetDCMetadataValues("dc:title");
     QString doctitle = "UNKNOWN";
@@ -1457,9 +1641,15 @@ void MainWindow::GenerateNCXGuideFromNav()
     } 
     QString mainid = m_Book->GetConstOPF()->GetMainIdentifierValue();
 
+    // figure out book path to the folder that *will* contain the ncx
+    QString mainfolder = m_Book->GetFolderKeeper()->GetFullPathToMainFolder();
+    QString ncxdir = m_Book->GetFolderKeeper()->GetDefaultFolderForGroup("ncx");
+    ncxdir = ncxdir.right(ncxdir.length() - mainfolder.length() - 1);
+
     // Now build the ncx in python in a separate thread since may be an long job
     PythonRoutines pr;
-    QFuture<QString> future = QtConcurrent::run(&pr, &PythonRoutines::GenerateNcxInPython, navdata, navname, doctitle, mainid);
+    QFuture<QString> future = QtConcurrent::run(&pr, &PythonRoutines::GenerateNcxInPython, navdata, 
+						navbkpath, ncxdir, doctitle, mainid);
     future.waitForFinished();
     QString ncxdata = future.result();
 
@@ -1497,7 +1687,7 @@ void MainWindow::GenerateNCXGuideFromNav()
     foreach(Resource * resource, html_resources) {
 	HTMLResource *html_resource = qobject_cast<HTMLResource *>(resource);
         if (html_resource) {
-	    QString respath = resource->GetRelativePathToOEBPS();
+	    QString respath = resource->GetRelativePath();
 	    if (nav_landmark_codes.contains(respath)) {
 	        QString landmark_code = nav_landmark_codes[respath];
                 QString guide_code =  Landmarks::instance()->GuideLandMapping(landmark_code);
@@ -1569,7 +1759,7 @@ void MainWindow::CreateIndex()
         HTMLResource *html_resource = qobject_cast<HTMLResource *>(resource);
 
         if (html_resource) {
-            QString resource_path = html_resource->GetRelativePathToOEBPS();
+            QString resource_path = html_resource->GetRelativePath();
             QString semantic_code;
             if (semantic_types.contains(resource_path)) {
                 semantic_code = semantic_types[resource_path];
@@ -1635,15 +1825,16 @@ void MainWindow::CreateIndex()
 
 void MainWindow::DeleteReportsStyles(QList<BookReports::StyleData *> reports_styles_to_delete)
 {
+    // html_filename and css_filename fields in StyleData have been converted to bookpaths
+
     // Convert the styles to CSS Selectors
     QHash<QString, QList<CSSInfo::CSSSelector *>> css_styles_to_delete;
     foreach(BookReports::StyleData * report_style, reports_styles_to_delete) {
         CSSInfo::CSSSelector *selector = new CSSInfo::CSSSelector();
         selector->groupText = report_style->css_selector_text;
         selector->line = report_style->css_selector_line;
-        QString css_short_filename = report_style->css_filename;
-        css_short_filename = css_short_filename.right(css_short_filename.length() - css_short_filename.lastIndexOf('/') - 1);
-        css_styles_to_delete[css_short_filename].append(selector);
+        QString css_filename = report_style->css_filename;
+        css_styles_to_delete[css_filename].append(selector);
     }
     // Confirm which styles to delete
     DeleteStyles delete_styles(css_styles_to_delete, this);
@@ -1694,9 +1885,10 @@ void MainWindow::ReportsDialog()
     m_Reports->activateWindow();
 }
 
-void MainWindow::OpenFile(QString filename, int line)
+// This routine accepts a file_path that is a book path
+void MainWindow::OpenFile(QString bookpath, int line)
 {
-    if (filename.isEmpty()) {
+    if (bookpath.isEmpty()) {
         return;
     }
 
@@ -1705,14 +1897,15 @@ void MainWindow::OpenFile(QString filename, int line)
     }
 
     try {
-        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByFilename(filename);
+        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(bookpath);
         OpenResource(resource, line);
     } catch (ResourceDoesNotExist) {
         //
     }
 }
 
-
+// note the files_to_delete is a list of Resource Book Paths
+// for safety
 void MainWindow::DeleteFilenames(QStringList files_to_delete)
 {
     if (files_to_delete.count() <= 0) {
@@ -1720,9 +1913,9 @@ void MainWindow::DeleteFilenames(QStringList files_to_delete)
     }
 
     QList <Resource *> resources;
-    foreach(QString filename, files_to_delete) {
+    foreach(QString file_path, files_to_delete) {
         try {
-            Resource *resource = m_Book->GetFolderKeeper()->GetResourceByFilename(filename);
+            Resource *resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(file_path);
             resources.append(resource);
         } catch (ResourceDoesNotExist) {
             continue;
@@ -1731,7 +1924,7 @@ void MainWindow::DeleteFilenames(QStringList files_to_delete)
     RemoveResources(resources);
 }
 
-bool MainWindow::DeleteCSSStyles(const QString &filename, QList<CSSInfo::CSSSelector *> css_selectors)
+bool MainWindow::DeleteCSSStyles(const QString &bookpath, QList<CSSInfo::CSSSelector *> css_selectors)
 {
     // Save our tabs data as we will be modifying the underlying resources
     SaveTabData();
@@ -1740,7 +1933,7 @@ bool MainWindow::DeleteCSSStyles(const QString &filename, QList<CSSInfo::CSSSele
     // Try our CSS resources first as most likely place for a style
     QList<Resource *> css_resources = m_BookBrowser->AllCSSResources();
     foreach(Resource * resource, css_resources) {
-        if (resource->Filename() == filename) {
+        if (resource->GetRelativePath() == bookpath) {
             CSSResource *css_resource = qobject_cast<CSSResource *>(resource);
             is_found = true;
             is_modified = css_resource->DeleteCSStyles(css_selectors);
@@ -1752,7 +1945,7 @@ bool MainWindow::DeleteCSSStyles(const QString &filename, QList<CSSInfo::CSSSele
         // Try an inline style instead
         QList<Resource *> html_resources = GetAllHTMLResources();
         foreach(Resource * resource, html_resources) {
-            if (resource->Filename() == filename) {
+            if (resource->GetRelativePath() == bookpath) {
                 HTMLResource *html_resource = qobject_cast<HTMLResource *>(resource);
                 is_modified = html_resource->DeleteCSStyles(css_selectors);
                 break;
@@ -1775,45 +1968,58 @@ void MainWindow::DeleteUnusedMedia()
         return;
     }
 
+    QRegularExpression url_file_search("url\\s*\\(\\s*['\"]?([^\\(\\)'\"]*)[\"']?\\)");
+
     QList<Resource *> resources;
+    // hash key is media bookpath which returns a list of all html bookpaths that use it
     QHash<QString, QStringList> html_files_hash = m_Book->GetHTMLFilesUsingMedia();
 
     // Get file urls from HTML inline styles
-    QStringList style_urls = m_Book->GetStyleUrlsInHTMLFiles();
+    QStringList style_bookpaths = m_Book->GetStyleUrlsInHTMLFiles();
 
     // Get files urls from CSS files
     QList<Resource *> css_resources = m_BookBrowser->AllCSSResources();
     foreach(Resource *resource, css_resources) {
-        CSSResource *css_resource = dynamic_cast<CSSResource *>(resource);
+        CSSResource *css_resource = qobject_cast<CSSResource *>(resource);
+        QString startdir = css_resource->GetFolder();
         CSSInfo css_info(css_resource->GetText(), true);
-
-        style_urls.append(css_info.getAllPropertyValues(""));
+	QStringList urllist = css_info.getAllPropertyValues("");
+	foreach (QString url, urllist) {
+	    QRegularExpressionMatch match = url_file_search.match(url);
+	    if (match.hasMatch()) {
+                QString ahref = match.captured(1);
+                if (ahref.indexOf(":") == -1) {
+	            style_bookpaths << Utility::buildBookPath(ahref, startdir);
+                }
+	    }
+	}
     }
+
     // Get file urls from HTML CSS files
     QList<Resource *> html_resources = GetAllHTMLResources();
     foreach(Resource *resource, html_resources) {
-        HTMLResource *html_resource = dynamic_cast<HTMLResource *>(resource);
+        HTMLResource *html_resource = qobject_cast<HTMLResource *>(resource);
+        QString startdir = html_resource->GetFolder();
         CSSInfo css_info(html_resource->GetText(), false);
-
-        style_urls.append(css_info.getAllPropertyValues(""));
+	QStringList urllist = css_info.getAllPropertyValues("");
+	foreach (QString url, urllist) {
+	    QRegularExpressionMatch match = url_file_search.match(url);
+	    if (match.hasMatch()) {
+                QString ahref = match.captured(1);
+                if (ahref.indexOf(":") == -1) {
+	            style_bookpaths << Utility::buildBookPath(ahref, startdir);
+                }
+	    }
+	}
     }
 
-    style_urls.removeDuplicates();
-
-    QStringList style_url_files;
-    QRegularExpression url_file_search("url\\s*\\(\\s*['\"]?([^\\(\\)'\"]*)[\"']?\\)");
-    foreach (QString url, style_urls) {
-        QRegularExpressionMatch match = url_file_search.match(url);
-        if (match.hasMatch()) {
-            style_url_files.append(match.captured(1));
-        }
-    }
+    style_bookpaths.removeDuplicates();
 
     foreach(Resource * resource, m_BookBrowser->AllMediaResources()) {
-        QString filepath = "../" + resource->GetRelativePathToOEBPS();
+        QString filepath = resource->GetRelativePath();
 
         // Include the file in the list to delete if it was not referenced
-        if (html_files_hash[filepath].count() == 0 && !style_url_files.contains(filepath)) {
+        if (html_files_hash[filepath].count() == 0 && !style_bookpaths.contains(filepath)) {
             // If used as cover image, consider it referenced.
             ImageResource *image_resource = qobject_cast<ImageResource *>(resource);
             if (!image_resource || !m_Book->GetOPF()->IsCoverImage(image_resource)) {
@@ -1883,6 +2089,7 @@ void MainWindow::InsertFileDialog()
     }
 }
 
+// selected_files is a list of existing book paths
 void MainWindow::InsertFiles(const QStringList &selected_files)
 {
     if (!selected_files.isEmpty()) {
@@ -1892,13 +2099,19 @@ void MainWindow::InsertFiles(const QStringList &selected_files)
             return;
         }
 
+	HTMLResource* tab_resource = qobject_cast<HTMLResource *>(flow_tab->GetLoadedResource());
+	if (!tab_resource) {
+	    return;
+	}
+
         if (flow_tab->InsertFileEnabled()) {
             foreach(QString selected_file, selected_files) {
                 try {
-                    Resource *resource = m_Book->GetFolderKeeper()->GetResourceByFilename(selected_file);
-                    QString relative_path = "../" + resource->GetRelativePathToOEBPS();
+                    Resource *resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(selected_file);
+                    QString relative_path = resource->GetRelativePathFromResource(tab_resource);
 
-                    QString filename = relative_path.right(relative_path.length() - relative_path.lastIndexOf("/") - 1);
+		    // extract just the filename without extension to create a text label
+		    QString filename = resource->Filename();
                     if (filename.contains(".")) {
                         filename = filename.left(filename.lastIndexOf("."));
                     }
@@ -1937,9 +2150,9 @@ void MainWindow::InsertFilesFromDisk()
 
     // We must disconnect the ResourcesAdded signal to avoid LoadTabContent being called
     // which results in the inserted image being cleared from the BV page immediately.
-    disconnect(m_BookBrowser, SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeleted()));
+    disconnect(m_BookBrowser, SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeletedOrMoved()));
     QStringList filenames = m_BookBrowser->AddExisting(true);
-    connect(m_BookBrowser, SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeleted()));
+    connect(m_BookBrowser, SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeletedOrMoved()));
     // Since we disconnected the signal we will have missed forced clearing of cache
     MainWindow::clearMemoryCaches();
     QStringList internal_filenames;
@@ -2297,7 +2510,7 @@ void MainWindow::MergeResources(QList <Resource *> resources)
             continue;
         }
         if (!h->FileIsWellFormed()) {
-            QMessageBox::warning(this, tr("Sigil"), tr("Merge cancelled: %1, XML not well formed.").arg(h->Filename()));
+            QMessageBox::warning(this, tr("Sigil"), tr("Merge cancelled: %1, XML not well formed.").arg(h->ShortPathName()));
             return;
         }
     }
@@ -2326,7 +2539,7 @@ void MainWindow::MergeResources(QList <Resource *> resources)
 
     if (failed_resource != NULL) {
         QApplication::restoreOverrideCursor();
-        QMessageBox::critical(this, tr("Sigil"), tr("Cannot merge file %1").arg(failed_resource->Filename()));
+        QMessageBox::critical(this, tr("Sigil"), tr("Cannot merge file %1").arg(failed_resource->ShortPathName()));
         QApplication::setOverrideCursor(Qt::WaitCursor);
         resource_to_open = failed_resource;
     } else {
@@ -2358,7 +2571,7 @@ void MainWindow::LinkStylesheetsToResources(QList <Resource *> resources)
             continue;
         }
         if (!h->FileIsWellFormed()) {
-            QMessageBox::warning(this, tr("Sigil"), tr("Link Stylesheets cancelled: %1, XML not well formed.").arg(h->Filename()));
+            QMessageBox::warning(this, tr("Sigil"), tr("Link Stylesheets cancelled: %1, XML not well formed.").arg(h->ShortPathName()));
             return;
         }
     }
@@ -2407,7 +2620,7 @@ void MainWindow::FindWord(QString word)
         Resource *resource = flow_tab->GetLoadedResource();
         if (resource->Type() == Resource::HTMLResourceType) {
             current_html_resource = qobject_cast<HTMLResource *>(resource);
-            current_html_filename = current_html_resource->Filename();
+            current_html_filename = current_html_resource->ShortPathName();
         }
     }
 
@@ -2417,7 +2630,7 @@ void MainWindow::FindWord(QString word)
     QList<Resource *> resources = GetAllHTMLResources();
     int passed_current = false;
     foreach(Resource *resource, resources) {
-        if (!passed_current && resource->Filename() != current_html_filename) {
+        if (!passed_current && resource->ShortPathName() != current_html_filename) {
             continue;
         }
         passed_current = true;
@@ -2425,7 +2638,7 @@ void MainWindow::FindWord(QString word)
     }
     foreach(Resource * resource, resources) {
         html_resources.append(resource);
-        if (resource->Filename() == current_html_filename) {
+        if (resource->ShortPathName() == current_html_filename) {
             break;
         }
     }
@@ -2440,7 +2653,7 @@ void MainWindow::FindWord(QString word)
         int start_pos = 0;
         // Reset the start to current cursor position only if this is the
         // first time we are in the current file.
-        if (resource->Filename() == current_html_filename) {
+        if (resource->ShortPathName() == current_html_filename) {
             if (!done_current) {
                 FlowTab *flow_tab = GetCurrentFlowTab();
                 if (flow_tab) {
@@ -2453,7 +2666,7 @@ void MainWindow::FindWord(QString word)
 
         int found_pos = HTMLSpellCheck::WordPosition(text, word, start_pos);
         if (found_pos >= 0) {
-            if (resource->Filename() != current_html_filename) {
+            if (resource->ShortPathName() != current_html_filename) {
                 OpenResourceAndWaitUntilLoaded(resource, -1, found_pos);
             }
             FlowTab *flow_tab = GetCurrentFlowTab();
@@ -2493,27 +2706,27 @@ QList<std::pair<QString, bool>> MainWindow::GetStylesheetsMap(QList<Resource *> 
     QList<std::pair<QString, bool>> stylesheet_map;
     QList<Resource *> css_resources = m_BookBrowser->AllCSSResources();
     // Use the first resource to get a list of known linked stylesheets in order.
-    QStringList checked_linked_paths = GetStylesheetsAlreadyLinked(resources.at(0));
+    QStringList checked_linked_bookpaths = GetStylesheetsAlreadyLinked(resources.at(0));
     // Then only consider them included if every selected resource includes
     // the same stylesheets in the same order.
     foreach(Resource * valid_resource, resources) {
-        QStringList linked_paths = GetStylesheetsAlreadyLinked(valid_resource);
-        foreach(QString path, checked_linked_paths) {
-            if (!linked_paths.contains(path)) {
-                checked_linked_paths.removeOne(path);
+        QStringList linked_bookpaths = GetStylesheetsAlreadyLinked(valid_resource);
+        foreach(QString bookpath, checked_linked_bookpaths) {
+            if (!linked_bookpaths.contains(bookpath)) {
+                checked_linked_bookpaths.removeOne(bookpath);
             }
         }
     }
     // Save the paths included in all resources in order
-    foreach(QString path, checked_linked_paths) {
-        stylesheet_map.append(std::make_pair(path, true));
+    foreach(QString bookpath, checked_linked_bookpaths) {
+        stylesheet_map.append(std::make_pair(bookpath, true));
     }
     // Save all the remaining paths and mark them not included
     foreach(Resource * resource, css_resources) {
-        QString pathname = "../" + resource->GetRelativePathToOEBPS();
+        QString abookpath = resource->GetRelativePath();
 
-        if (!checked_linked_paths.contains(pathname)) {
-            stylesheet_map.append(std::make_pair(pathname, false));
+        if (!checked_linked_bookpaths.contains(abookpath)) {
+            stylesheet_map.append(std::make_pair(abookpath, false));
         }
     }
     return stylesheet_map;
@@ -2526,14 +2739,12 @@ QStringList MainWindow::GetStylesheetsAlreadyLinked(Resource *resource)
     QStringList linked_stylesheets;
     QStringList existing_stylesheets;
     foreach(Resource * css_resource, m_BookBrowser->AllCSSResources()) {
-        //existing_stylesheets.append( css_resource->Filename() );
-        existing_stylesheets.append("../" + css_resource->GetRelativePathToOEBPS());
+        existing_stylesheets.append(css_resource->GetRelativePath());
     }
-    foreach(QString pathname, html_resource->GetLinkedStylesheets()) {
-        pathname = Utility::URLDecodePath(pathname);
+    foreach(QString bookpath, html_resource->GetLinkedStylesheets()) {
         // Only list the stylesheet if it exists in the book
-        if (existing_stylesheets.contains(pathname)) {
-            linked_stylesheets.append(pathname);
+        if (existing_stylesheets.contains(bookpath)) {
+            linked_stylesheets.append(bookpath);
         }
     }
     return linked_stylesheets;
@@ -2614,7 +2825,7 @@ void MainWindow::GenerateToc()
     if (is_headings_changed || is_toc_changed) {
         // Reload the current tab to see visual impact if user changed heading level(s)
         // It might not have been the current tab, but what the heck, possible user has the NCX open even.
-        ResourcesAddedOrDeleted();
+        ResourcesAddedOrDeletedOrMoved();
         m_Book.data()->SetModified();
         ShowMessageOnStatusBar(tr("Table Of Contents generated."));
     } else {
@@ -2632,9 +2843,11 @@ void MainWindow::CreateHTMLTOC()
 
     QString version = m_Book->GetOPF()->GetEpubVersion();
 
+    CSSResource* css_resource;
     bool found_css = false;
     foreach(Resource *resource, m_BookBrowser->AllCSSResources()) {
         if (resource->Filename() == SGC_TOC_CSS_FILENAME) {
+            css_resource = qobject_cast<CSSResource *> (resource);
             found_css = true;
         }
     }
@@ -2647,10 +2860,10 @@ void MainWindow::CreateHTMLTOC()
             // Need to make sure InitialLoad is done in newly added css resource object to prevent
             // blank css issues after a save to disk
             Resource * resource = m_Book->GetFolderKeeper()->AddContentFileToFolder(css_path);
-            CSSResource *css_resource = qobject_cast<CSSResource *> (resource);
+            css_resource = qobject_cast<CSSResource *> (resource);
             css_resource->InitialLoad();
         } else {
-            m_BookBrowser->CreateHTMLTOCCSSFile();
+            css_resource = m_BookBrowser->CreateHTMLTOCCSSFile();
         }
     }
 
@@ -2663,9 +2876,7 @@ void MainWindow::CreateHTMLTOC()
     QList<Resource *> resources = GetAllHTMLResources();
 
     foreach(Resource * resource, resources) {
-
         HTMLResource *htmlResource = qobject_cast<HTMLResource *>(resource);
-
         if (htmlResource) {
 
 	    htmlResources.append(htmlResource);
@@ -2699,7 +2910,9 @@ void MainWindow::CreateHTMLTOC()
         htmlResources.insert(0, tocResource);
         m_Book->GetOPF()->UpdateSpineOrder(htmlResources);
     }
-    TOCHTMLWriter toc(m_TableOfContents->GetRootEntry());
+    TOCHTMLWriter toc(tocResource->GetRelativePath(), 
+		      css_resource->GetRelativePath(),
+		      m_TableOfContents->GetRootEntry());
     tocResource->SetText(toc.WriteXML(version));
 
     // Setting a semantic on a resource that already has it set will remove the semantic.
@@ -2870,6 +3083,9 @@ void MainWindow::PreferencesDialog()
 
     if (preferences.isReloadTabsRequired()) {
         m_TabManager->ReopenTabs();
+        m_BookBrowser->Refresh();
+    } else if (preferences.isRefreshBookBrowserRequired()) {
+        m_BookBrowser->Refresh();
     } else if (preferences.isRefreshSpellingHighlightingRequired()) {
         RefreshSpellingHighlighting();
         // Make sure menu state is set
@@ -2899,6 +3115,9 @@ void MainWindow::ManagePluginsDialog()
     // other preferences may have been changed as well
     if (preferences.isReloadTabsRequired()) {
         m_TabManager->ReopenTabs();
+	m_BookBrowser->Refresh();
+    } else if (preferences.isRefreshBookBrowserRequired()) {
+        m_BookBrowser->Refresh();
     } else if (preferences.isRefreshSpellingHighlightingRequired()) {
         RefreshSpellingHighlighting();
         // Make sure menu state is set
@@ -3340,6 +3559,9 @@ void MainWindow::ScrollPreview()
 
 void MainWindow::UpdatePreview()
 {
+
+    if (m_IsClosing) return;
+
     m_PreviewTimer.stop();
 
     DBG qDebug() << "MW: UpdatePreview()";
@@ -3553,7 +3775,7 @@ void MainWindow::SplitOnSGFSectionMarkers()
 
         // Check if data is well formed before splitting.
         if (!html_resource->FileIsWellFormed()) {
-            QMessageBox::warning(this, tr("Sigil"), tr("Cannot split: %1 XML is not well formed").arg(html_resource->Filename()));
+            QMessageBox::warning(this, tr("Sigil"), tr("Cannot split: %1 XML is not well formed").arg(html_resource->ShortPathName()));
             return;
         }
 
@@ -3824,13 +4046,16 @@ void MainWindow::SetNewBook(QSharedPointer<Book> new_book)
     connect(m_Book.data(),     SIGNAL(ModifiedStateChanged(bool)), this, SLOT(setWindowModified(bool)));
     connect(m_Book.data(),     SIGNAL(ResourceUpdatedFromDiskRequest(Resource *)), this, SLOT(ResourceUpdatedFromDisk(Resource *)));
     connect(m_BookBrowser,     SIGNAL(ShowStatusMessageRequest(const QString &, int)), this, SLOT(ShowMessageOnStatusBar(const QString &, int)));
-    connect(m_BookBrowser,     SIGNAL(ResourcesDeleted()), this, SLOT(ResourcesAddedOrDeleted()));
-    connect(m_BookBrowser,     SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeleted()));
+    connect(m_BookBrowser,     SIGNAL(ResourcesDeleted()), this, SLOT(ResourcesAddedOrDeletedOrMoved()));
+    connect(m_BookBrowser,     SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeletedOrMoved()));
+    connect(m_BookBrowser,     SIGNAL(ResourcesMoved()), this, SLOT(ResourcesAddedOrDeletedOrMoved()));
 }
 
-void MainWindow::ResourcesAddedOrDeleted()
+void MainWindow::ResourcesAddedOrDeletedOrMoved()
 {
-    MainWindow::clearMemoryCaches();
+    // MainWindow::clearMemoryCaches();
+
+    m_Book->GetFolderKeeper()->RefreshGroupFolders();
 
     // Make sure currently visible tab is updated immediately
     FlowTab *flow_tab = GetCurrentFlowTab();
@@ -3840,17 +4065,112 @@ void MainWindow::ResourcesAddedOrDeleted()
 }
 
 
-void MainWindow::CreateNewBook()
+void MainWindow::CreateNewBook(const QStringList &book_paths)
 {
+    QString version;
+    {
+        SettingsStore ss;
+        version = ss.defaultVersion();
+    }
+
+    QStringList bookpaths(book_paths);
+
+    if (bookpaths.isEmpty()) {
+        // Check to see if a default empty epub layout already exists
+        // and if so use that in place of the standard one
+        QString empty_epub_ini_path = Utility::DefinePrefsDir() + "/" + "sigil_empty_epub.ini";
+        if (QFile::exists(empty_epub_ini_path)) {
+            SettingsStore ss(empty_epub_ini_path);
+            const QString SETTINGS_GROUP = "bookpaths";
+	    const QString KEY_BOOKPATHS = SETTINGS_GROUP + "/" + "empty_epub_bookpaths";
+	    while (!ss.group().isEmpty()) {
+	        ss.endGroup();
+	    }
+            bookpaths = ss.value(KEY_BOOKPATHS,QStringList()).toStringList();
+        }
+    }
+
+    bool is_valid = false;
+
+    if (!bookpaths.isEmpty()) {
+
+        // Check if minimally valid
+        bool hasOPF = false;   bool hasNCX = false;
+        bool hasNAV = false;   bool hasTEXT = false;
+        bool hasSTYLE = false;
+        foreach(QString bkpath, bookpaths) {
+            if (bkpath.endsWith(".opf")) hasOPF = true;
+            if (bkpath.endsWith(".ncx")) hasNCX = true;
+            if (bkpath.endsWith("marker.css")) hasSTYLE = true;
+            if (bkpath.endsWith("marker.xhtml")) hasTEXT = true;
+	    if (bkpath.endsWith(".xhtml") && !bkpath.endsWith("marker.xhtml")) hasNAV = true;
+        }
+        if (version.startsWith('3')) {
+            is_valid = hasOPF && hasNAV && hasTEXT && hasSTYLE;
+        } else {
+            is_valid = hasOPF && hasNCX && hasTEXT;
+        }
+    }
+
+    if (bookpaths.isEmpty() || !is_valid) {
+        // these define the layout of a standard sigil epub
+        bookpaths.clear();
+        bookpaths << "OEBPS/content.opf"      << "OEBPS/Text/marker.xhtml" << "OEBPS/Styles/marker.css"
+                  << "OEBPS/Fonts/marker.otf" << "OEBPS/Images/marker.jpg" << "OEBPS/Audio/marker.mp3"
+                  << "OEBPS/Video/marker.mp4" << "OEBPS/Misc/marker.xml";
+	if (version.startsWith('2')) {
+	    bookpaths << "OEBPS/toc.ncx";
+	} else {
+            bookpaths << "OEBPS/Text/nav.xhtml" << "OEBPS/Misc/marker.js";
+	}
+    }
+
+    // extract the information we need from the bookpaths
+    QString opfbookpath;
+    QString ncxbookpath;
+    QString navfile;
+    QString navdir;
+    QStringList textdirs;
+    QStringList mtypes;
+    foreach(QString bkpath, bookpaths) {
+        QString filename = bkpath.split("/").last();
+        QString extension = filename.split(".").last();
+        QString folder = Utility::startingDir(bkpath);
+        QString mt = MediaTypes::instance()->GetMediaTypeFromExtension(extension);
+        mtypes << mt;
+        if (filename.endsWith(".opf")) opfbookpath = bkpath;
+        if (filename.endsWith(".ncx")) ncxbookpath = bkpath;
+        if (filename.endsWith("marker.xhtml")) textdirs << folder;
+	if (filename.endsWith(".xhtml") && !filename.endsWith("marker.xhtml")) {
+	    navdir = folder;
+	    navfile = filename;
+        }
+    }
+
     QSharedPointer<Book> new_book = QSharedPointer<Book>(new Book());
-    new_book->CreateEmptyHTMLFile();
-    QString version = new_book->GetConstOPF()->GetEpubVersion();
+    // immediately after creating a new book, you must
+    // add a proper OPF to it *before* doing anything else
+    new_book->GetFolderKeeper()->AddOPFToFolder(version, opfbookpath);
+
+    // Set Group Folders from bookpaths
+    new_book->GetFolderKeeper()->SetGroupFolders(bookpaths, mtypes);
+
+    // create a single text file in each location
+    foreach(QString textfolder, textdirs) {
+      new_book->CreateEmptyHTMLFile(textfolder);
+    }
+
+    // handle nav / ncx
     if (version.startsWith('3')) {
-        HTMLResource * nav_resource = new_book->CreateEmptyNavFile(true);
+        HTMLResource * nav_resource = new_book->CreateEmptyNavFile(true, navdir, navfile);
         new_book->GetOPF()->SetNavResource(nav_resource);
         new_book->GetOPF()->SetItemRefLinear(nav_resource, false);
+        // ncx is optional in epub3
+        if (!ncxbookpath.isEmpty()) {
+	    new_book->GetFolderKeeper()->AddNCXToFolder(version, ncxbookpath);
+        }
     } else {
-        NCXResource * ncx_resource = new_book->GetFolderKeeper()->AddNCXToFolder(version);
+        new_book->GetFolderKeeper()->AddNCXToFolder(version, ncxbookpath);
     }
     SetNewBook(new_book);
     new_book->SetModified(false);
@@ -4157,12 +4477,10 @@ float MainWindow::SliderRangeToZoomFactor(int slider_range_value)
     }
 }
 
-void MainWindow::SetInsertedFileWatchResourceFile(const QString &pathname)
+void MainWindow::SetInsertedFileWatchResourceFile(const QString &bookpath)
 {
-    QString filename = QFileInfo(pathname).fileName();
-
     try {
-        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByFilename(filename);
+        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(bookpath);
         m_Book->GetFolderKeeper()->WatchResourceFile(resource);
     } catch (ResourceDoesNotExist) {
         // nothing
@@ -4474,6 +4792,8 @@ void MainWindow::ExtendUI()
     sm->registerAction(this, ui.actionNewSVGFile, "MainWindow.NewSVGFile");
 	sm->registerAction(this, ui.actionNewFullImageFile, "MainWindow.NewFullImageFile");
     sm->registerAction(this, ui.actionAddExistingFile, "MainWindow.AddExistingFile");
+    sm->registerAction(this, ui.actionStandardize, "MainWindow.StandardizeEpub");
+    sm->registerAction(this, ui.actionCustomLayout, "MainWindow.CustomLayout");
     sm->registerAction(this, ui.actionOpen, "MainWindow.Open");
 #ifndef Q_OS_MAC
     sm->registerAction(this, ui.actionClose, "MainWindow.Close");
@@ -5071,6 +5391,8 @@ void MainWindow::ConnectSignalsToSlots()
     connect(ui.actionSigilWebsite,  SIGNAL(triggered()), this, SLOT(SigilWebsite()));
     connect(ui.actionAbout,         SIGNAL(triggered()), this, SLOT(AboutDialog()));
     // Tools
+    connect(ui.actionStandardize,   SIGNAL(triggered()), this, SLOT(StandardizeEpub()));
+    connect(ui.actionCustomLayout,  SIGNAL(triggered()), this, SLOT(CreateEpubLayout()));
     connect(ui.actionAddCover,      SIGNAL(triggered()), this, SLOT(AddCover()));
     connect(ui.actionMetaEditor,    SIGNAL(triggered()), this, SLOT(MetaEditorDialog()));
     connect(ui.actionWellFormedCheckEpub,  SIGNAL(triggered()), this, SLOT(WellFormedCheckEpub()));

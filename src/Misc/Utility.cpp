@@ -33,6 +33,9 @@
 #include <time.h>
 #include <string>
 
+#include <utility>
+#include <vector>
+
 #include <QApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -52,6 +55,7 @@
 #include <QRegularExpressionMatch>
 #include <QFile>
 #include <QFileInfo>
+#include <QCollator>
 #include <QDebug>
 
 #include "sigil_constants.h"
@@ -137,43 +141,6 @@ QStringList Utility::LinuxHunspellDictionaryDirs()
     return paths;
 }
 #endif
-
-// Generate relative path to destination from starting directory path
-// Both paths should be absolute and preferably cannonical
-QString Utility::relativePath(const QString & destination, const QString & start_dir)
-{
-    QString dest(destination);
-    QString start(start_dir);
-    QChar sep = '/';
-
-    // remove any trailing path separators from both paths
-    while (dest.endsWith(sep)) dest.chop(1);
-    while (start.endsWith(sep)) start.chop(1);
-
-    QStringList dsegs = dest.split(sep, QString::KeepEmptyParts);
-    QStringList ssegs = start.split(sep, QString::KeepEmptyParts);
-    QStringList res;
-    int i = 0;
-    int nd = dsegs.size();
-    int ns = ssegs.size();
-    // skip over starting common path segments in both paths 
-    while (i < ns && i < nd && (dsegs.at(i) == ssegs.at(i))) {
-        i++;
-    }
-    // now "move up" for each remaining path segment in the starting directory
-    int p = i;
-    while (p < ns) {
-        res.append("..");
-        p++;
-    }
-    // And append the remaining path segments from the destination 
-    p = i;
-    while(p < nd) {
-        res.append(dsegs.at(p));
-        p++;
-    }
-    return res.join(sep);
-}
 
 
 // Uses QUuid to generate a random UUID but also removes
@@ -404,6 +371,38 @@ bool Utility::ForceCopyFile(const QString &fullinpath, const QString &fulloutpat
         Utility::SDeleteFile(fulloutpath);
     }
     return QFile::copy(fullinpath, fulloutpath);
+}
+
+
+// Needed to add the S to this routine name to prevent collisions on Windows
+// We had to do the same thing for DeleteFile earlier
+bool Utility::SMoveFile(const QString &oldfilepath, const QString &newfilepath)
+{
+    // Make sure the path exists, otherwise very
+    // bad things could happen
+    if (!QFileInfo(oldfilepath).exists()) {
+        return false;
+    }
+
+    // check if these are identical files on the file system
+    // and if so no copy and delete sequence is needed
+    if (QFileInfo(oldfilepath) == QFileInfo(newfilepath)) {
+        return true;
+    }
+
+    // Ensure that the newfilepath doesn't already exist but due to case insenstive file systems
+    // check if we are actually moving to an identical path with a different case.
+    if (QFileInfo(newfilepath).exists() && QFileInfo(oldfilepath) != QFileInfo(newfilepath)) {
+        return false;
+    }
+
+    // copy file from old file path to new file path
+    bool success = QFile::copy(oldfilepath, newfilepath);
+    // if and only if copy succeeds then delete old file 
+    if (success) {
+        Utility::SDeleteFile(oldfilepath);
+    }
+    return success;
 }
 
 
@@ -797,7 +796,7 @@ bool Utility::UnZip(const QString &zippath, const QString &destpath)
                     dir.mkpath(qfile_name);
                     continue;
                 } else {
-                    dir.mkpath(qfile_info.path());
+		    if (!qfile_info.path().isEmpty()) dir.mkpath(qfile_info.path());
                 }
 
                 // Open the file entry in the archive for reading.
@@ -904,35 +903,85 @@ QStringList Utility::ZipInspect(const QString &zippath)
     return filelist;
 }
 
+// some utilities for working with absolute and book relative paths
+
+#if 0
+// brute force method
+QString Utility::longestCommonPath(const QStringList& filepaths, const QString& sep)
+{
+    // handle special cases
+    if (filepaths.isEmpty()) return QString();
+    if (filepaths.length() == 1) return QFileInfo(filepaths.at(0)).absolutePath() + sep;
+    
+    // split each path into its component segments
+    QList<QStringList> fpaths;
+    int minlen = -1;
+    foreach(QString apath, filepaths) {
+        QStringList segs = apath.split(sep);
+        int n = segs.length();
+        if (minlen == -1) minlen = n;
+        if (n < minlen) minlen = n;
+        fpaths.append(segs);
+    }
+
+    // now build up the results
+    QStringList res;
+    int numpaths = fpaths.length();
+    for(int i=0; i < minlen; i++) {
+        QString aseg = fpaths.at(0).at(i);
+        bool amatch = true;
+        int j = 1;
+        while(amatch && j < numpaths) {
+            amatch = (aseg == fpaths.at(j).at(i));
+            j++;
+        }
+        if (amatch) {
+            res << aseg;
+        } else {
+            break;
+        }
+    }
+    if (res.isEmpty()) return "";
+    return res.join(sep) + sep;
+}
+
+#else
+
 QString Utility::longestCommonPath(const QStringList& filepaths, const QString& sep)
 {
     if (filepaths.isEmpty()) return QString();
     if (filepaths.length() == 1) return QFileInfo(filepaths.at(0)).absolutePath() + sep;
     QStringList fpaths(filepaths);
     fpaths.sort();
-    const QStringList segs1 = fpaths.at(0).split(sep);
-    const QStringList segs2 = fpaths.at(1).split(sep);
+    const QStringList segs1 = fpaths.first().split(sep);
+    const QStringList segs2 = fpaths.last().split(sep);
     QStringList res;
     int i = 0;
     while((i < segs1.length()) && (i < segs2.length()) && (segs1.at(i) == segs2.at(i))) {
         res.append(segs1.at(i));
-        i++; 
-    } 
+        i++;
+    }
     if (res.length() == 0) return sep;
     return res.join(sep) + sep;
 }
 
+#endif
+
+
+// works with absolute paths and book (internal to epub) paths
 QString Utility::resolveRelativeSegmentsInFilePath(const QString& file_path, const QString &sep)
 {
     const QStringList segs = file_path.split(sep);
     QStringList res;
     for (int i = 0; i < segs.length(); i++) {
+        // FIXME skip empty segments but not at the front when windows
         if (segs.at(i) == ".") continue;
         if (segs.at(i) == "..") {
             if (!res.isEmpty()) {
 	        res.removeLast();
             } else {
 	        qDebug() << "Error resolving relative path segments";
+		qDebug() << "original file path: " << file_path;
             }
         } else {
             res << segs.at(i);
@@ -941,3 +990,128 @@ QString Utility::resolveRelativeSegmentsInFilePath(const QString& file_path, con
     return res.join(sep);
 }
 
+
+// Generate relative path to destination from starting directory path
+// Both paths should be cannonical
+QString Utility::relativePath(const QString & destination, const QString & start_dir)
+{
+    QString dest(destination);
+    QString start(start_dir);
+
+    // first handle the special case
+    if (start_dir.isEmpty()) return destination;
+
+    QChar sep = '/';
+
+    // remove any trailing path separators from both paths
+    while (dest.endsWith(sep)) dest.chop(1);
+    while (start.endsWith(sep)) start.chop(1);
+
+    QStringList dsegs = dest.split(sep, QString::KeepEmptyParts);
+    QStringList ssegs = start.split(sep, QString::KeepEmptyParts);
+    QStringList res;
+    int i = 0;
+    int nd = dsegs.size();
+    int ns = ssegs.size();
+    // skip over starting common path segments in both paths 
+    while (i < ns && i < nd && (dsegs.at(i) == ssegs.at(i))) {
+        i++;
+    }
+    // now "move up" for each remaining path segment in the starting directory
+    int p = i;
+    while (p < ns) {
+        res.append("..");
+        p++;
+    }
+    // And append the remaining path segments from the destination 
+    p = i;
+    while(p < nd) {
+        res.append(dsegs.at(p));
+        p++;
+    }
+    return res.join(sep);
+}
+
+// dest_relpath is the relative path to the destination file
+// start_folder is the *book path* (path internal to the epub) to the starting folder
+QString Utility::buildBookPath(const QString& dest_relpath, const QString& start_folder)
+{
+    QString bookpath(start_folder);
+    while (bookpath.endsWith("/")) bookpath.chop(1);
+    if (!bookpath.isEmpty()) { 
+        bookpath = bookpath + "/" + dest_relpath;
+    } else {
+        bookpath = dest_relpath;
+    }
+    bookpath = resolveRelativeSegmentsInFilePath(bookpath, "/");
+    return bookpath;
+}
+
+// no ending path separator
+QString Utility::startingDir(const QString &file_bookpath)
+{
+    QString start_dir(file_bookpath);
+    int pos = start_dir.lastIndexOf('/');
+    if (pos > -1) { 
+        start_dir = start_dir.left(pos);
+    } else {
+        start_dir = "";
+    }
+    return start_dir;
+}
+
+// This is the equivalent of Resource.cpp's GetRelativePathFromResource but using book paths
+QString Utility::buildRelativePath(const QString &from_file_bkpath, const QString & to_file_bkpath)
+{
+    // handle special case of "from" and "to" being identical
+    if (from_file_bkpath == to_file_bkpath) return "";
+
+    // convert start_file_bkpath to start_dir by stripping off existing filename component
+    return relativePath(to_file_bkpath, startingDir(from_file_bkpath));
+}   
+
+std::pair<QString, QString> Utility::parseHREF(const QString &relative_href)
+{
+    QString fragment;
+    QString attpath = relative_href;
+    int fragpos = attpath.lastIndexOf("#");
+    // fragment will include any # if one exists
+    if (fragpos != -1) {
+        fragment = attpath.mid(fragpos, -1);
+        attpath = attpath.mid(0, fragpos);
+    }
+    if (attpath.startsWith("./")) attpath = attpath.mid(2,-1);
+    return std::make_pair(attpath, fragment);
+}
+
+
+bool Utility::sort_pair_in_reverse(const std::pair<int,QString> &a, const std::pair<int,QString> &b)
+{
+    return (a.first > b.first);
+}
+
+QStringList Utility::sortByCounts(const QStringList &folderlst, const QList<int> &countlst)
+{
+    std::vector< std::pair<int , QString> > vec;
+    int i = 0;
+    foreach(QString afolder, folderlst) {
+        vec.push_back(std::make_pair(countlst.at(i++), afolder));
+    }
+    std::sort(vec.begin(), vec.end(), sort_pair_in_reverse);
+    QStringList sortedlst;
+    for(int j=0; j < vec.size(); j++) {
+        sortedlst << vec[j].second;
+    }
+    return sortedlst;
+}
+
+QStringList Utility::LocaleAwareSort(QStringList &names)
+{
+  SettingsStore ss;
+  QLocale uiLocale(ss.uiLanguage());
+  QCollator uiCollator(uiLocale);
+  uiCollator.setCaseSensitivity(Qt::CaseInsensitive);
+  // use uiCollator.compare(s1, s2)
+  std::sort(names.begin(), names.end(), uiCollator);
+  return names;
+}

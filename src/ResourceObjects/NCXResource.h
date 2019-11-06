@@ -47,6 +47,8 @@ public:
 
     virtual bool RenameTo(const QString &new_filename);
 
+    virtual bool MoveTo(const QString &newbookpath);
+
     virtual ResourceType Type() const;
 
     void SetMainID(const QString &main_id);
@@ -54,9 +56,6 @@ public:
     bool GenerateNCXFromBookContents(const Book *book);
     void GenerateNCXFromTOCContents(const Book *book, TOCModel *toc_model);
     void GenerateNCXFromTOCEntries(const Book *book, TOCModel::TOCEntry toc_root_entry);
-
-    QString GetRelativePathToRoot() const;
-    QString GetRelativePathToOEBPS() const;
 
 private:
 

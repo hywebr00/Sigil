@@ -1,7 +1,7 @@
 /************************************************************************
 **
-**  Copyright (C) 2018, 2019 Kevin B. Hendricks, Stratford, ON Canada
-**  Copyright (C) 2009, 2010, 2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford, ON Canada
+**  Copyright (C) 2009-2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
 **
 **  This file is part of Sigil.
 **
@@ -20,6 +20,7 @@
 **
 *************************************************************************/
 
+#include <QDebug>
 #include "BookManipulation/CleanSource.h"
 #include "ResourceObjects/Resource.h"
 #include "ResourceObjects/CSSResource.h"
@@ -184,20 +185,45 @@ void TabManager::SaveTabData()
 
 void TabManager::LinkClicked(const QUrl &url)
 {
-    if (url.toString().isEmpty()) {
-        return;
-    }
-
-    ContentTab *tab = GetCurrentContentTab();
     QString url_string = url.toString();
 
-    // Convert fragments to full filename/fragments
-    if (url_string.startsWith("#")) {
-        url_string.prepend(tab->GetFilename());
-    } else if (url.scheme() == "file") {
-        if (url_string.contains("/#")) {
-            url_string.insert(url_string.indexOf("/#") + 1, tab->GetFilename());
-        }
+    if (url_string.isEmpty()) {
+        return;
+    }
+    
+    ContentTab *tab = GetCurrentContentTab();
+
+    if (url_string.indexOf(':') == -1) {
+
+        // we have a relative url, so build an internal
+        // book: scheme url book:///bookpath#fragment
+        QString attpath = Utility::URLDecodePath(url_string);
+	QString dest_bookpath;
+	int fragpos = attpath.lastIndexOf('#');
+	bool has_fragment = fragpos != -1;
+	QString fragment = "";
+	if (has_fragment) {
+	    fragment = url_string.mid(fragpos+1, -1);
+	    attpath = attpath.mid(0, fragpos);
+	}
+	if (attpath.isEmpty()) {
+	    dest_bookpath = tab->GetLoadedResource()->GetRelativePath();
+	} else {
+	    QString startdir = tab->GetLoadedResource()->GetFolder();
+	    dest_bookpath = Utility::buildBookPath(attpath, startdir);
+	}
+	if (!fragment.isEmpty()) {
+	    dest_bookpath = dest_bookpath + "#" + fragment;
+	}
+	url_string = "book:///" + dest_bookpath;
+	// QUrl will take care of encoding the url path
+    } else {
+        // we have a scheme and are absolute
+        if (url.scheme() == "file") {
+            if (url_string.contains("/#")) {
+                url_string.insert(url_string.indexOf("/#") + 1, tab->GetFilename());
+            }
+	}
     }
 
     emit OpenUrlRequest(QUrl(url_string));
@@ -222,7 +248,7 @@ void TabManager::OpenResource(Resource *resource,
         AddNewContentTab(new_tab, precede_current_tab);
         emit ShowStatusMessageRequest("");
     } else {
-        QString message = tr("Cannot edit file") + ": " + resource->Filename();
+        QString message = tr("Cannot edit file") + ": " + resource->ShortPathName();
         emit ShowStatusMessageRequest(message);
     }
 
@@ -349,7 +375,7 @@ void TabManager::CloseTab(int tab_index, bool force)
 void TabManager::UpdateTabName(ContentTab *renamed_tab)
 {
     Q_ASSERT(renamed_tab);
-    setTabText(indexOf(renamed_tab), renamed_tab->GetFilename());
+    setTabText(indexOf(renamed_tab), renamed_tab->GetShortPathName());
 }
 
 void TabManager::SetFocusInTab()
@@ -560,9 +586,9 @@ bool TabManager::AddNewContentTab(ContentTab *new_tab, bool precede_current_tab)
         // This is still broken in Qt 5.12.2 
         // elided text is wrong when icon image present (hides most of elided text)
         // icon image still overlaps with name of tab if ElideNone is used
-        idx = addTab(new_tab, new_tab->GetFilename());
+        idx = addTab(new_tab, new_tab->GetShortPathName());
 #else
-        idx = addTab(new_tab, new_tab->GetIcon(), new_tab->GetFilename());
+        idx = addTab(new_tab, new_tab->GetIcon(), new_tab->GetShortPathName());
 #endif
 
         setCurrentWidget(new_tab);
@@ -574,13 +600,13 @@ bool TabManager::AddNewContentTab(ContentTab *new_tab, bool precede_current_tab)
         // This is still broken in Qt 5.12.2
         // elided text is wrong when icon image present image (hides most of elided text)
         // icon image still overlaps with name of tab if ElideNone is used
-        idx = insertTab(currentIndex(), new_tab, new_tab->GetFilename());
+        idx = insertTab(currentIndex(), new_tab, new_tab->GetShortPathName());
 #else
-        idx = insertTab(currentIndex(), new_tab, new_tab->GetIcon(), new_tab->GetFilename());
+        idx = insertTab(currentIndex(), new_tab, new_tab->GetIcon(), new_tab->GetShortPathName());
 #endif
 
     }
-    setTabToolTip(idx, new_tab->GetFilename());
+    setTabToolTip(idx, new_tab->GetShortPathName());
 
     connect(new_tab, SIGNAL(DeleteMe(ContentTab *)), this, SLOT(DeleteTab(ContentTab *)));
     connect(new_tab, SIGNAL(TabRenamed(ContentTab *)), this, SLOT(UpdateTabName(ContentTab *)));

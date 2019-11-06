@@ -1,6 +1,7 @@
 /************************************************************************
 **
-**  Copyright (C) 2009, 2010, 2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford Ontario Canada
+**  Copyright (C) 2009-2011 Strahinja Markovic  <strahinja.markovic@gmail.com>
 **
 **  This file is part of Sigil.
 **
@@ -34,6 +35,7 @@ class HTMLResource;
 class ImageResource;
 class OPFModel;
 class Resource;
+class CSSResource;
 class QAction;
 class QMenu;
 class QModelIndex;
@@ -117,6 +119,16 @@ public:
 
     void AddFile(QString filepath);
 
+    /**
+     *  Allow automatic renaming of resources
+     */
+    void RenameResourceList(const QList<Resource *> &resources, const QStringList &newfilenames);
+
+    /**
+     *  Allow automatic moving of resources
+     */
+    void MoveResourceList(const QList<Resource *> &resources, const QStringList &newbookpaths);
+ 
 public slots:
 
     /**
@@ -162,7 +174,7 @@ public slots:
 	void AddNewFullImage();
     void AddNewCSS();
     void AddNewSVG();
-    void CreateHTMLTOCCSSFile();
+    CSSResource* CreateHTMLTOCCSSFile();
     void CreateIndexCSSFile();
     /**
      * Implements the Add Existing context menu action functionality.
@@ -182,6 +194,13 @@ public slots:
      * and resets the focus to Book Browser.
      */
     void SelectRenamedResource();
+
+    /**
+     * Updates the selection in the book display
+     * to the one resource being moved
+     * and resets the focus to Book Browser.
+     */
+    void SelectMovedResource();
 
     void SaveAsUrl(const QUrl &url);
 
@@ -217,6 +236,9 @@ signals:
     void ResourcesAdded();
 
     void ResourcesDeleted();
+
+    void ResourcesMoved();
+
 
     /**
      * Wired to the current MainWindow::UpdateBrowserSelectionToTab signal.
@@ -265,12 +287,23 @@ private slots:
      */
     void Rename();
 
+    /**
+     * Implements the Move context menu action functionality.
+     */
+    void Move();
+
+
     QString GetFirstAvailableTemplateName(QString base, QString number_string);
 
     /**
      * Implements the Rename selected context menu action functionality.
      */
     void RenameSelected();
+
+    /**
+     * Implements the Move selected context menu action functionality.
+     */
+    void MoveSelected();
 
     /**
      * Implements the Delete context menu action functionality.
@@ -456,6 +489,7 @@ private:
     QAction *m_AddNewSVG;
     QAction *m_AddExisting;
     QAction *m_Rename;
+    QAction *m_Move;
     QAction *m_Delete;
     QAction *m_Merge;
     QAction *m_MergeWithPrevious;
@@ -497,6 +531,7 @@ private:
     QList <QModelIndex> m_SavedSelection;
 
     Resource *m_RenamedResource;
+    Resource *m_MovedResource;
 };
 
 #endif // BOOKBROWSER_H

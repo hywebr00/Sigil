@@ -1,6 +1,7 @@
 /************************************************************************
 **
-**  Copyright (C) 2009, 2010, 2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford Ontario Canada
+**  Copyright (C) 2009-2011 Strahinja Markovic  <strahinja.markovic@gmail.com>
 **
 **  This file is part of Sigil.
 **
@@ -95,6 +96,7 @@ void ValidationResultsView::ValidateCurrentBook()
     foreach (Resource * resource, resources) {
         if (resource->Type() == Resource::HTMLResourceType) {
             QString apath = resource->GetFullPath();
+	    QString bookpath = resource->GetRelativePath();
             QStringList reslst = ValidateFile(apath);
             if (!reslst.isEmpty()) {
                 foreach (QString res, reslst) {
@@ -114,7 +116,7 @@ void ValidationResultsView::ValidateCurrentBook()
                     int lineno = details[2].toInt();
                     int charoffset = details[3].toInt();
                     QString msg = details[4];
-                    results.append(ValidationResult(vtype,filename,lineno,charoffset,msg));
+                    results.append(ValidationResult(vtype,bookpath,lineno,charoffset,msg));
                 }
             }
         }
@@ -159,7 +161,8 @@ void ValidationResultsView::ResultDoubleClicked(QTableWidgetItem *item)
         return;
     }
 
-    QString filename = QFileInfo(path_item->text()).fileName();
+    QString shortname = path_item->text();
+    QString bookpath = path_item->data(Qt::UserRole+1).toString();
     QTableWidgetItem *line_item = m_ResultTable->item(row, 1);
     QTableWidgetItem *offset_item = m_ResultTable->item(row, 2);
 
@@ -172,7 +175,7 @@ void ValidationResultsView::ResultDoubleClicked(QTableWidgetItem *item)
     int charoffset = offset_item->text().toInt();
 
     try {
-        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByFilename(filename);
+        Resource *resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(bookpath);
         // if character offset info exists, use it in preference to just the line number
         if (charoffset != -1) {
             emit OpenResourceRequest(resource, line, charoffset, QString());
@@ -218,9 +221,18 @@ void ValidationResultsView::DisplayResults(const QList<ValidationResult> &result
         }
 
         m_ResultTable->insertRow(rownum);
-
-        QString path = result.Filename();
+ 
+	QString path;
+	QString bookpath = result.BookPath();
+	try {
+	    Resource * resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(bookpath);
+	    path = resource->ShortPathName();
+	} catch (ResourceDoesNotExist) {
+	    path = "***Invalid Book Path Provided ***";
+	}
+	
         item = new QTableWidgetItem(RemoveEpubPathPrefix(path));
+	item->setData(Qt::UserRole+1, bookpath);
         item->setBackground(row_brush);
         m_ResultTable->setItem(rownum, 0, item);
 

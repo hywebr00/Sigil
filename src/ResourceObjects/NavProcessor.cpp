@@ -39,10 +39,6 @@ static const QString NAV_PAGELIST_PATTERN = "\\s*<!--\\s*SIGIL_REPLACE_PAGELIST_
 static const QString NAV_LANDMARKS_PATTERN = "\\s*<!--\\s*SIGIL_REPLACE_LANDMARKS_HERE\\s*-->\\s*";
 static const QString NAV_TOC_PATTERN = "\\s*<!--\\s*SIGIL_REPLACE_TOC_HERE\\s*-->\\s*";
 
-static const QStringList SIGIL_FOLDERS = QStringList() << "Images" << "Fonts" << "Text" << "Styles" 
-                                                       << "Audio" << "Video" << "Misc";
-
-
 NavProcessor::NavProcessor(HTMLResource * nav_resource)
   : m_NavResource(nav_resource)
 {
@@ -234,7 +230,9 @@ QList<NavTOCEntry> NavProcessor::GetNodeTOC(GumboInterface & gi, const GumboNode
                             NavTOCEntry te;
                             te.lvl = lvl;
                             GumboAttribute* hrefattr = gumbo_get_attribute(&li_child->v.element.attributes, "href");
-                            if (hrefattr) te.href = Utility::URLDecodePath(QString::fromUtf8(hrefattr->value));
+                            if (hrefattr) { 
+			        te.href = Utility::URLDecodePath(QString::fromUtf8(hrefattr->value));
+			    }
                             te.title = Utility::DecodeXML(gi.get_local_text_of_node(li_child));
                             toclist.append(te);
                         } else if (li_child->v.element.tag == GUMBO_TAG_OL) {
@@ -497,7 +495,7 @@ void NavProcessor::AddLandmarkCode(const Resource *resource, QString new_code, b
             NavLandmarkEntry le;
             le.etype = new_code;
             le.title = title;
-            le.href = ConvertOEBPSToNavRelative(resource->GetRelativePathToOEBPS());
+            le.href = ConvertBookPathToNavRelative(resource->GetRelativePath());
             landlist.append(le);
         }
     } else {
@@ -520,12 +518,12 @@ void NavProcessor::RemoveLandmarkForResource(const Resource * resource)
 
 int NavProcessor::GetResourceLandmarkPos(const Resource *resource, const QList<NavLandmarkEntry> & landlist)
 {
-    QString resource_oebps_path = resource->GetRelativePathToOEBPS();
+    QString resource_book_path = resource->GetRelativePath();
     for (int i=0; i < landlist.count(); ++i) {
         NavLandmarkEntry le = landlist.at(i);
-        QString href = ConvertHREFToOEBPSRelative(le.href);
+        QString href = ConvertHREFToBookPath(le.href);
         QStringList parts = href.split('#', QString::KeepEmptyParts);
-        if (parts.at(0) == resource_oebps_path) {
+        if (parts.at(0) == resource_book_path) {
             return i;
         }
     }
@@ -561,7 +559,7 @@ QHash <QString, QString> NavProcessor::GetLandmarkNameForPaths()
     QReadLocker locker(&m_NavResource->GetLock());
     QHash <QString, QString> semantic_types;
     foreach(NavLandmarkEntry le, landlist) {
-        QString href = ConvertHREFToOEBPSRelative(le.href);
+        QString href = ConvertHREFToBookPath(le.href);
         QStringList parts = href.split('#', QString::KeepEmptyParts);
         QString etype = le.etype;
         semantic_types[parts.at(0)] = Landmarks::instance()->GetName(etype);
@@ -575,7 +573,7 @@ QHash <QString, QString> NavProcessor::GetLandmarkCodeForPaths()
   QReadLocker locker(&m_NavResource->GetLock());
   QHash <QString, QString> semantic_types;
   foreach(NavLandmarkEntry le, landlist) {
-    QString href = ConvertHREFToOEBPSRelative(le.href);
+    QString href = ConvertHREFToBookPath(le.href);
     QStringList parts = href.split('#', QString::KeepEmptyParts);
     QString etype = le.etype;
     semantic_types[parts.at(0)] = etype;
@@ -614,8 +612,8 @@ bool NavProcessor::GenerateTOCFromBookContents(const Book* book)
 QList<NavTOCEntry>  NavProcessor::HeadingWalker(const Headings::Heading & heading, int lvl)
 {
     QList<NavTOCEntry> toclist;
-    QString nav_file = m_NavResource->GetRelativePathToOEBPS();
-    QString heading_file = heading.resource_file->GetRelativePathToOEBPS();
+    QString nav_file = m_NavResource->GetRelativePath();
+    QString heading_file = heading.resource_file->GetRelativePath();
     if (heading.include_in_toc && (nav_file != heading_file)) {
         NavTOCEntry te;
         te.lvl = lvl;
@@ -626,9 +624,9 @@ QList<NavTOCEntry>  NavProcessor::HeadingWalker(const Headings::Heading & headin
         // we link to the heading element directly
         // Prevent links back to to the nav itself form the nav
         if (heading.at_file_start) {
-            te.href = ConvertOEBPSToNavRelative(heading_file);
+            te.href = ConvertBookPathToNavRelative(heading_file);
         } else {
-            te.href = ConvertOEBPSToNavRelative(heading_file) + "#" + id_to_use;
+            te.href = ConvertBookPathToNavRelative(heading_file) + "#" + id_to_use;
         }
         toclist.append(te);
     }
@@ -660,7 +658,7 @@ void NavProcessor::AddTOCEntry(const NavTOCEntry & nav_entry, TOCModel::TOCEntry
 {
     TOCModel::TOCEntry toc_entry;
     toc_entry.text = nav_entry.title;
-    QString href = ConvertHREFToOEBPSRelative(nav_entry.href);
+    QString href = ConvertHREFToBookPath(nav_entry.href);
     toc_entry.target = href;
     foreach(NavTOCEntry nav_child, nav_entry.children) {
         AddTOCEntry(nav_child, toc_entry);
@@ -722,7 +720,7 @@ QList<NavTOCEntry> NavProcessor::AddEditTOCEntry(TOCModel::TOCEntry & entry, int
     QList<NavTOCEntry> toclist;
     NavTOCEntry te;
     te.title = entry.text;
-    QString href = ConvertOEBPSToNavRelative(entry.target);
+    QString href = ConvertBookPathToNavRelative(entry.target);
     te.href = href;
     te.lvl = lvl;
     toclist.append(te);
@@ -734,61 +732,41 @@ QList<NavTOCEntry> NavProcessor::AddEditTOCEntry(TOCModel::TOCEntry & entry, int
 
 
 
-// Utility Routines to convert hrefs from NCX Relative to Nav Relative and Back
+// Utility Routines to convert hrefs between Book Relative and Nav Relative 
 
-// convert nav relative paths to be relative to OEBPS folder
-// Nav lives in OEBPS/Text/ in Sigil
-// NCX lives in OEBPS/ in Sigil
-QString NavProcessor::ConvertHREFToOEBPSRelative(const QString & href) 
+QString NavProcessor::ConvertHREFToBookPath(const QString & nav_rel_href) 
 {
-    QString new_href = href;
-    QString nav_href = m_NavResource->GetRelativePathToOEBPS();
-
-    if (new_href.startsWith("./")) {
-        // handles "./" and "./Section0001.xhtml"
-        new_href.remove(0,2);
-        if (new_href.isEmpty()) {
-            new_href = nav_href;
-        } else {
-            new_href = "Text/" + new_href;
-        }
-    } else if (new_href.startsWith("#")) {
-        // handles "#toc"
-        new_href = nav_href + new_href;
-    } else if (new_href.startsWith("../")) {
-        // handles "../Text/blah" 
-        new_href.remove(0,3);
-        QStringList parts = new_href.split('/', QString::KeepEmptyParts);
-        QString folder = parts.at(0);
-        if (!SIGIL_FOLDERS.contains(folder)) {
-            new_href = "Text/" + new_href;
-        }
-    } else {
-        // handles "Section0001.xhtml#frag"
-        QStringList parts = new_href.split('/', QString::KeepEmptyParts);
-        QString folder = parts.at(0);
-        if (!SIGIL_FOLDERS.contains(folder)) {
-            new_href = "Text/" + new_href;
-        }
-    }
-    return new_href;
-}
-
-// convert oebps relative paths to be relative to the Text folder
-// Nav lives in OEBPS/Text/ in Sigil
-// NCX lives in OEBPS/ in Sigil
-QString NavProcessor::ConvertOEBPSToNavRelative(const QString & href) 
-{
-    QString new_href = href;
-    QString nav_href = m_NavResource->GetRelativePathToOEBPS();
-    QStringList pieces = new_href.split('#', QString::KeepEmptyParts);
+    QString bookpath;
+    if (nav_rel_href.indexOf(":") != -1) return nav_rel_href;
+    // split off any fragment
+    QStringList pieces = nav_rel_href.split('#', QString::KeepEmptyParts);
     QString basepath = pieces.at(0);
     QString fragment = "";
     if (pieces.size() > 1) fragment = pieces.at(1);
-    if ((basepath == nav_href) && !fragment.isEmpty()) {
-        new_href = "#" + fragment;
-    } else if (!new_href.startsWith("http://")) {
-        new_href = "../" + new_href;
+    // handle special cases first
+    if (basepath == "./" || basepath.isEmpty()) {
+        // this link ends in the nav itself
+        bookpath = m_NavResource->GetRelativePath();
+        if (!fragment.isEmpty()) bookpath = bookpath + "#" + fragment; 
+	return bookpath;
+    }
+    bookpath = Utility::buildBookPath(basepath, m_NavResource->GetFolder());
+    if (!fragment.isEmpty()) bookpath = bookpath + "#" + fragment; 
+    return bookpath;
+}
+
+// convert BookPaths (epub folder relative paths) to be relative to the Nav
+QString NavProcessor::ConvertBookPathToNavRelative(const QString & bookpath) 
+{
+    QString nav_bkpath = m_NavResource->GetRelativePath();
+    // split off any fragment added to bookpath destination
+    QStringList pieces = bookpath.split('#', QString::KeepEmptyParts);
+    QString dest_bkpath = pieces.at(0);
+    QString fragment = "";
+    if (pieces.size() > 1) fragment = pieces.at(1);
+    QString new_href = Utility::buildRelativePath(nav_bkpath, dest_bkpath);
+    if (!fragment.isEmpty()) {
+        new_href = new_href + "#" + fragment;
     }
     return new_href;
 }

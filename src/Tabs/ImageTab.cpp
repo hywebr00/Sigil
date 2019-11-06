@@ -1,7 +1,7 @@
 /************************************************************************
 **
-**  Copyright (C) 2019  Kevin B. Hendricks, Stratford Ontario Canada
-**  Copyright (C) 2009, 2010, 2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford Ontario Canada
+**  Copyright (C) 2009-2011 Strahinja Markovic  <strahinja.markovic@gmail.com>
 **
 **  This file is part of Sigil.
 **
@@ -36,7 +36,7 @@
 #include <QtPrintSupport/QPrinter>
 #include <QtPrintSupport/QPrintDialog>
 #include <QtPrintSupport/QPrintPreviewDialog>
-
+#include <QDebug>
 
 #include "MainUI/MainWindow.h"
 #include "Misc/OpenExternally.h"
@@ -217,8 +217,8 @@ void ImageTab::openWith()
 
         if (!editorPath.isEmpty()) {
             if (OpenExternally::openFile(resourceUrl.toLocalFile(), editorPath)) {
-                const QString &pathname = resourceUrl.toString();
-                emit InsertedFileOpenedExternally(pathname);
+	        const QString bookpath= GetLoadedResource()->GetRelativePath();
+                emit InsertedFileOpenedExternally(bookpath);
             }
         }
     }
@@ -252,8 +252,8 @@ void ImageTab::openWithEditor(int slotnum)
         if (data.isValid() && !editor_path.isEmpty()) {
             const QUrl &resourceUrl = data.toUrl();
             if (OpenExternally::openFile(resourceUrl.toLocalFile(), editor_path)) {
-                const QString &pathname = resourceUrl.toString();
-                emit InsertedFileOpenedExternally(pathname);
+	        const QString bookpath = GetLoadedResource()->GetRelativePath();
+                emit InsertedFileOpenedExternally(bookpath);
             }
         }
     }

@@ -1,6 +1,8 @@
 /************************************************************************
 **
-**  Copyright (C) 2015  Kevin B. Hendricks, Stratford ON
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford ON
+**  Copyright (C) 2013      John Schember <john@nachtimwald.com>
+**  Copyright (C) 2009-2011 Strahinja Markovic  <strahinja.markovic@gmail.com>
 **
 **  This file is part of Sigil.
 **
@@ -52,6 +54,8 @@ public:
 
     virtual bool RenameTo(const QString &new_filename);
 
+    virtual bool MoveTo(const QString &newbookpath);
+
     virtual ResourceType Type() const;
 
     virtual QString GetText() const;
@@ -97,7 +101,7 @@ public:
 
     void AutoFixWellFormedErrors();
 
-    QStringList GetSpineOrderFilenames() const;
+    QStringList GetSpineOrderBookPaths() const;
 
     void SetItemRefLinear(Resource * resource, bool linear);
 
@@ -124,8 +128,6 @@ public:
      */
     QList<QVariant> GetDCMetadataValues(QString text) const;
 
-    QString GetRelativePathToRoot() const;
-
     void SetNavResource(HTMLResource* nav);
     HTMLResource* GetNavResource() const;
 
@@ -150,6 +152,8 @@ public slots:
     void UpdateSpineOrder(const QList<HTMLResource *> html_files);
 
     void ResourceRenamed(const Resource *resource, QString old_full_path);
+
+    void ResourceMoved(const Resource *resource, QString old_full_path);
 
     void UpdateManifestProperties(const QList<Resource *> resources);
 
@@ -226,8 +230,6 @@ private:
      */
     void WriteIdentifier(const QString &metaname, const QString &metavalue, OPFParser &p);
 
-    QStringList GetRelativePathsToAllFilesInOEPBS() const;
-
     static QString GetOPFDefaultText(const QString &version);
 
     void FillWithDefaultText();
@@ -242,20 +244,9 @@ private:
 
     QString ValidatePackageVersion(const QString &source);
 
-    /**
-     * Initializes m_Mimetypes.
-     */
-    void CreateMimetypes();
-
     ///////////////////////////////
     // PRIVATE MEMBER VARIABLES
     ///////////////////////////////
-
-    /**
-     * A mapping between file extensions
-     * and appropriate MIME types.
-     */
-    QHash<QString, QString> m_Mimetypes;
 
     HTMLResource * m_NavResource;
     bool m_WarnedAboutVersion;
