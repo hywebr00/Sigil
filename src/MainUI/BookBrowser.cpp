@@ -556,10 +556,12 @@ void BookBrowser::AddNewFullImage()
 	if (select_files.exec() == QDialog::Accepted) {
 		if (select_files.IsInsertFromDisk()) {
 			QStringList filenames = AddExisting(false, true);
+			
 			// Convert full path to filename.
 			foreach(QString filename, filenames) {
-				QString internal_filename = filename.right(filename.length() - filename.lastIndexOf("/") - 1);
-				selected_files.append(internal_filename);
+				//QString internal_filename = filename.right(filename.length() - filename.lastIndexOf("/") - 1);
+				//selected_files.append(internal_filename);
+				selected_files.append(filename);
 			}
 		}
 		else {
@@ -569,7 +571,7 @@ void BookBrowser::AddNewFullImage()
 	if (selected_files.count() == 0) {
 		return;
 	}
-
+	
 	foreach(QString image_filename, selected_files) {
 
 		Resource *current_resource = GetCurrentResource();
@@ -578,16 +580,16 @@ void BookBrowser::AddNewFullImage()
 		QString version = m_Book->GetConstOPF()->GetEpubVersion();
 		
 		try {
-			Resource *image_resource = m_Book->GetFolderKeeper()->GetResourceByFilename(image_filename);
+			Resource *image_resource = m_Book->GetFolderKeeper()->GetResourceByBookPath(image_filename);
 			ImageResource *image_type_resource = qobject_cast<ImageResource *>(image_resource);
 			if (image_type_resource) {
 				// Add the filename and dimensions of the image to the HTML source.
-				QString image_relative_path = "../" + image_resource->GetRelativePathToOEBPS();
+				QString image_relative_path = image_resource->GetRelativePath(); // GetRelativePathToOEBPS();
 				QImage img(image_resource->GetFullPath());
 				QString text = new_html_resource->GetText();
 				QString width = QString::number(img.width());
 				QString height = QString::number(img.height());
-				text.replace("SGC_IMAGE_FILENAME", image_relative_path);
+				text.replace("SGC_IMAGE_FILENAME", image_relative_path.replace("OEBPS/", "../"));
 				text.replace("SGC_IMAGE_WIDTH", width);
 				text.replace("SGC_IMAGE_HEIGHT", height);
 				new_html_resource->SetText(text);
@@ -608,6 +610,7 @@ void BookBrowser::AddNewFullImage()
 		emit BookContentModified();
 	}
 	Refresh();
+	
 }
 
 void BookBrowser::CopyCSS()
