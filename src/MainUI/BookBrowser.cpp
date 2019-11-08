@@ -1666,6 +1666,7 @@ void BookBrowser::CreateContextMenuActions()
 {
     KeyboardShortcutManager *sm = KeyboardShortcutManager::instance();
     m_SelectAll               = new QAction(tr("Select All"),            this);
+	m_AddNewFullImage		  = new QAction(tr("Add Full Image File"),   this);
     m_AddNewHTML              = new QAction(tr("Add Blank HTML File"),   this);
     m_AddNewCSS               = new QAction(tr("Add Blank Stylesheet"),  this);
     m_AddNewSVG               = new QAction(tr("Add Blank SVG Image"),   this);
@@ -1721,6 +1722,7 @@ void BookBrowser::CreateContextMenuActions()
     addAction(m_Move);
     addAction(m_LinkStylesheets);
     addAction(m_AddSemantics);
+	
 }
 
 
@@ -1856,6 +1858,7 @@ bool BookBrowser::SuccessfullySetupContextMenu(const QPoint &point)
     if (m_LastContextMenuType == Resource::HTMLResourceType) {
         m_ContextMenu->addAction(m_AddNewHTML);
         m_ContextMenu->addAction(m_CopyHTML);
+		m_ContextMenu->addAction(m_AddNewFullImage);
         m_CopyHTML->setEnabled(item_count == 1);
     } else if (m_LastContextMenuType == Resource::CSSResourceType) {
         m_ContextMenu->addAction(m_AddNewCSS);
@@ -1944,6 +1947,7 @@ void BookBrowser::ConnectSignalsToSlots()
     connect(m_CopyHTML,                SIGNAL(triggered()), this, SLOT(CopyHTML()));
     connect(m_CopyCSS,                 SIGNAL(triggered()), this, SLOT(CopyCSS()));
     connect(m_AddNewHTML,              SIGNAL(triggered()), this, SLOT(AddNewHTML()));
+	connect(m_AddNewFullImage ,        SIGNAL(triggered()), this, SLOT(AddNewFullImage()));
     connect(m_RenumberTOC,             SIGNAL(triggered()), this, SLOT(RenumberTOC()));
     connect(m_SortHTML,                SIGNAL(triggered()), this, SLOT(SortHTML()));
     connect(m_AddNewCSS,               SIGNAL(triggered()), this, SLOT(AddNewCSS()));

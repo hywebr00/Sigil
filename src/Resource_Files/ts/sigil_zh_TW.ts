@@ -502,8 +502,8 @@ if a sans-serif font-family specified in your CSS</source>
     </message>
     <message>
         <location filename="../../MainUI/BookBrowser.cpp" line="81"/>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1688"/>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1806"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1689"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1808"/>
         <source>Open With</source>
         <translation>開啟方式</translation>
     </message>
@@ -551,7 +551,7 @@ if a sans-serif font-family specified in your CSS</source>
         <translation>未預期的錯誤。封面只能使用圖片檔。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="633"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="682"/>
         <source>Add Existing Files</source>
         <translation>新增已存在的檔案</translation>
     </message>
@@ -689,127 +689,132 @@ There always has to be at least one.</source>
     </message>
     <message>
         <location filename="../../MainUI/BookBrowser.cpp" line="1669"/>
+        <source>Add Full Image File</source>
+        <translation>新增滿版圖</translation>
+    </message>
+    <message>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1670"/>
         <source>Add Blank HTML File</source>
         <translation>新增空白 HTML 檔</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1670"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1671"/>
         <source>Add Blank Stylesheet</source>
         <translation>新增空白樣式</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1671"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1672"/>
         <source>Add Blank SVG Image</source>
         <translation>新增空白 SVG 圖片</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1672"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1673"/>
         <source>Add Existing Files...</source>
         <translation>增加已存在的檔案...</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1673"/>
         <location filename="../../MainUI/BookBrowser.cpp" line="1674"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1675"/>
         <source>Add Copy</source>
         <translation>新增複本</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1675"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1676"/>
         <source>Rename</source>
         <translation>重新命名</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1676"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1677"/>
         <source>Move</source>
         <translation>移動</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1677"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1678"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1678"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1679"/>
         <source>Cover Image</source>
         <translation>封面圖片</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1679"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1680"/>
         <source>Merge</source>
         <translation>合併</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1680"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1681"/>
         <source>None</source>
         <translation>無</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1681"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1682"/>
         <source>Use Adobe&apos;s Method</source>
         <translation>使用Adobe的方法</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1682"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1683"/>
         <source>Use IDPF&apos;s Method</source>
         <translation>使用IDPF的方法</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1683"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1684"/>
         <source>Sort</source>
         <translation>排序</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1684"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1685"/>
         <source>Renumber TOC Entries</source>
         <translation>重新編號目錄條目</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1685"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1686"/>
         <source>Link Stylesheets...</source>
         <translation>連結樣式表...</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1686"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1687"/>
         <source>Add Semantics...</source>
         <translation>加入語義...</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1687"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1688"/>
         <source>Validate with W3C</source>
         <translation>以 W3C 驗證</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1689"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1690"/>
         <source>Save As</source>
         <translation>另存新檔</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1703"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1704"/>
         <source>Merge with previous file, or merge multiple files into one.</source>
         <translation>與上一個檔案合併，或將多個檔案合併為一個。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1706"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1707"/>
         <source>Rename selected file(s)</source>
         <translation>重新命名選取的檔案</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1709"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1710"/>
         <source>Move selected file(s) to a new folder</source>
         <translation>將選取的檔案移動到新的資料夾</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1711"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1712"/>
         <source>Link Stylesheets to selected file(s).</source>
         <translation>連結樣式表到選取的檔案。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1713"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1714"/>
         <source>Add Semantics to selected file(s).</source>
         <translation>加入語義到選取的檔案。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/BookBrowser.cpp" line="1841"/>
+        <location filename="../../MainUI/BookBrowser.cpp" line="1843"/>
         <source>Other Application</source>
         <translation>其他應用程式</translation>
     </message>
@@ -1979,14 +1984,14 @@ other end to continue searching.</source>
     </message>
     <message>
         <location filename="../../MainUI/FindReplace.cpp" line="179"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1451"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1452"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1453"/>
         <source>Current File</source>
         <translation>目前檔案</translation>
     </message>
     <message numerus="yes">
         <location filename="../../MainUI/FindReplace.cpp" line="337"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1272"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1273"/>
         <source>Matches found: %n</source>
         <translation>
             <numerusform>找到符合的項目： %n</numerusform>
@@ -1994,13 +1999,13 @@ other end to continue searching.</source>
     </message>
     <message>
         <location filename="../../MainUI/FindReplace.cpp" line="424"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1296"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1297"/>
         <source>No replacements made</source>
         <translation>未做任何取代</translation>
     </message>
     <message numerus="yes">
         <location filename="../../MainUI/FindReplace.cpp" line="426"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1298"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1299"/>
         <source>Replacements made: %n</source>
         <translation>
             <numerusform>進行取代： %n</numerusform>
@@ -2012,151 +2017,151 @@ other end to continue searching.</source>
         <translation>沒有發現符合條件</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1150"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1151"/>
         <source>This tab cannot be searched</source>
         <translation>這個選項無法搜尋</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1182"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1183"/>
         <source>Unnamed search loaded</source>
         <translation>載入未命名的搜尋</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1185"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1186"/>
         <source>Loaded</source>
         <translation>已載入</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1198"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1218"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1236"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1256"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1282"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1199"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1219"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1237"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1257"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1283"/>
         <source>No searches selected</source>
         <translation>沒有選取任何搜尋</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1439"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1440"/>
         <source>What to search for</source>
         <translation>要搜尋什麼</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1440"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1441"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1442"/>
         <source>Normal</source>
         <translation>標準</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1441"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1442"/>
         <source>Case in-sensitive search of exactly what you type.</source>
         <translation>搜尋字串不管大小寫。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1442"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1443"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1444"/>
         <source>Case Sensitive</source>
         <translation>區分大小寫</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1443"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1444"/>
         <source>Case sensitive search of exactly what you type.</source>
         <translation>搜尋字串要區分大小寫。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1444"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1445"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1446"/>
         <source>Regex</source>
         <translation>正規表示式</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1445"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1446"/>
         <source>Search for a pattern using Regular Expression syntax.</source>
         <translation>使用正規表示式語法來做搜尋樣式。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1446"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1447"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1448"/>
         <source>Text</source>
         <translation>文字內容</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1447"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1448"/>
         <source>Case sensitive search outside html tags.</source>
         <translation>區分大小寫的純網頁文字內容搜尋</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1450"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1462"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1451"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1463"/>
         <source>Where to search</source>
         <translation>在哪裡搜尋</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1452"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1453"/>
         <source>Restrict the find or replace to the opened file.  Hold the Ctrl key down while clicking any search buttons to temporarily restrict the search to the Current File.</source>
         <translation>將尋找並取代的功能限制在已開啟的檔案。點擊任何搜尋按鍵時同時按住 Ctrl 鍵，可以暫時將搜尋限制在目前的檔案。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1453"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1454"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1455"/>
         <source>All HTML Files</source>
         <translation>所有HTML檔案</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1454"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1455"/>
         <source>Find or replace in all HTML files in Code View.</source>
         <translation>在代碼檢視模式中，對所有 HTML 檔尋找或取代。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1455"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1456"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1457"/>
         <source>Selected HTML Files</source>
         <translation>選取的 HTML 檔案</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1456"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1457"/>
         <source>Restrict the find or replace to the HTML files selected in the Book Browser in Code View.</source>
         <translation>在代碼檢視模式中，限制尋找或取代功能於書本瀏覽器中選取的 HTML 檔。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1458"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1459"/>
         <source>To restrict search to selected text, use Search&amp;rarr;Mark Selected Text.</source>
         <translation>要將搜尋限制為選取的文字，請使用搜尋 &amp;rarr; 標記選取的文字。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1463"/>
         <location filename="../../MainUI/FindReplace.cpp" line="1464"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1465"/>
         <source>Marked Text</source>
         <translation>已標記文字</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1464"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1465"/>
         <source>Restrict the find or replace to the text marked by Search&amp;rarr;Mark Selected Text.  Cleared if you use Undo, enter text, or change views or tabs.</source>
         <translation>限制尋找或取代「搜尋」─「標記選取的文字」中定義的文字。若是您用「復原」，或是輸入文字，或是變更檢視或分頁時就會被清除。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1468"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1472"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1469"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1473"/>
         <source>Up</source>
         <translation>上</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1469"/>
-        <location filename="../../MainUI/FindReplace.cpp" line="1473"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1470"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1474"/>
         <source>Down</source>
         <translation>下</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1470"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1471"/>
         <source>Direction to search</source>
         <translation>搜尋方向</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1472"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1473"/>
         <source>Search for the previous match from your current position.</source>
         <translation>從您目前的位置搜尋前一筆符合。</translation>
     </message>
     <message>
-        <location filename="../../MainUI/FindReplace.cpp" line="1473"/>
+        <location filename="../../MainUI/FindReplace.cpp" line="1474"/>
         <source>Search for the next match from your current position.</source>
         <translation>從您目前的位置搜尋下一筆符合。</translation>
     </message>
@@ -6972,145 +6977,114 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
         <translation>Epub&amp;3 工具</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="349"/>
-
         <source>Plugins</source>
         <translation>外掛</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="367"/>
-
+        <location filename="../../MainUI/MainWindow.cpp" line="844"/>
         <source>File</source>
         <translation>檔案</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="382"/>
-
-        <location filename="../../MainUI/MainWindow.cpp" line="338"/>
+        <location filename="../../MainUI/MainWindow.cpp" line="341"/>
         <source>Edit</source>
         <translation>編輯</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="403"/>
-
         <source>Insert</source>
         <translation>插入</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="420"/>
-
         <source>Back</source>
         <translation>返回</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="432"/>
-
         <source>Donate</source>
         <translation>捐助</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="444"/>
-
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="458"/>
-
         <source>Plugins Set 1</source>
         <translation>外掛集 1</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="474"/>
-
         <source>Plugins Set 2</source>
         <translation>外掛集 2</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="490"/>
-
         <source>Heading</source>
         <translation>標題</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="504"/>
-
         <source>set Heading Level of Selected Text</source>
-        <translation type="vanished">設定選取的文字的標題等級</translation>
+        <translation>設定選取的文字的標題等級</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="517"/>
-
         <source>Format</source>
         <translation>格式</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="534"/>
-
         <source>Align</source>
         <translation>對齊</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="549"/>
-
         <source>List</source>
         <translation>清單</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="562"/>
-
         <source>Indent</source>
         <translation>縮排</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="575"/>
-
         <source>Change Case</source>
         <translation>變更大小寫</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="585"/>
-
         <source>aA</source>
-        <translation type="vanished">aA</translation>
+        <translation>aA</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="588"/>
-
         <source>set Case of Selected Text</source>
-        <translation type="vanished">設定選取的文字的大小寫</translation>
+        <translation>設定選取的文字的大小寫</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="598"/>
-
         <source>Text Direction</source>
         <translation>文字方向</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="614"/>
-
         <source>Clip Bar</source>
         <translation>片段列</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="649"/>
-
         <source>&amp;New</source>
         <translation>新增(&amp;N)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="652"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;New&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Create a new book.&lt;/p&gt;</source>
@@ -7119,23 +7093,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;建立新的書。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="657"/>
-
         <source>Ctrl+N</source>
         <translation>Ctrl+N</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="666"/>
-
         <source>&amp;Save</source>
         <translation>儲存(&amp;S)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="669"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Save&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Save the current book.&lt;/p&gt;</source>
@@ -7144,23 +7112,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;儲存此書。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="674"/>
-
         <source>Ctrl+S</source>
         <translation>Ctrl+S</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="679"/>
-
         <source>Save &amp;As...</source>
         <translation>另存新檔(&amp;A)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="682"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Save As&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Save the current book with a different filename.&lt;/p&gt;</source>
@@ -7169,36 +7131,27 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;以不同的名稱儲存此書。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="687"/>
-
         <source>Ctrl+Shift+S</source>
         <translation>Ctrl+Shift+S</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="692"/>
-
         <source>Save A &amp;Copy...</source>
         <translation>儲存複本(&amp;C)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="695"/>
-
         <source>Save a copy of your book to another file name.</source>
         <translation>將您的書本用另一個檔名儲存一份副本。</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="704"/>
-
         <source>Cu&amp;t</source>
         <translation>剪下(&amp;T)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="707"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Cut&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Cuts the selected text from the document and puts it on the clipboard.&lt;/p&gt;</source>
@@ -7207,16 +7160,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字從文件中剪下，並放入剪貼簿中。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="718"/>
-
         <source>&amp;Paste</source>
         <translation>貼上(&amp;P)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="721"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Paste&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Pastes the content from the clipboard into the book.&lt;/p&gt;</source>
@@ -7225,37 +7174,27 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將剪貼簿的內容貼到書中。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="728"/>
-
         <source>&amp;Closing Tag</source>
         <translation>關閉標籤(&amp;C)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="731"/>
-
         <source>Insert a closing tag in Code View.</source>
         <translation>在代碼檢視中插入關閉標籤。</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="734"/>
-
         <source>Ctrl+.</source>
         <translation>Ctrl+.</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="743"/>
-
         <source>&amp;Undo</source>
         <translation>復原(&amp;A)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="746"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Undo&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Reverts the changes of the previous operation.&lt;/p&gt;</source>
@@ -7264,23 +7203,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;恢復上一個操作的變更。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="751"/>
-
         <source>Ctrl+Z</source>
         <translation>Ctrl+Z</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="760"/>
-
         <source>&amp;Redo</source>
         <translation>取消復原(&amp;R)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="763"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Redo&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Restores the changes reverted by the previous Undo action.&lt;/p&gt;</source>
@@ -7289,23 +7222,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;恢復上一個復原動作的變更。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="768"/>
-
         <source>Ctrl+Y</source>
         <translation>Ctrl+Y</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="777"/>
-
         <source>&amp;Copy</source>
         <translation>複製(&amp;C)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="780"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Copy&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Copies the selected text and puts it on the clipboard.&lt;/p&gt;</source>
@@ -7314,16 +7241,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字複製到剪貼簿。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="794"/>
-
         <source>Align &amp;Left</source>
         <translation>向左對齊(&amp;L)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="797"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Align Left&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Align the paragraph to the left.&lt;/p&gt;</source>
@@ -7333,14 +7256,11 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="811"/>
-
         <source>Align &amp;Right</source>
         <translation>向右對齊(&amp;R)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="814"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Align Right&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Align the paragraph to the right.&lt;/p&gt;</source>
@@ -7350,14 +7270,11 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="828"/>
-
         <source>&amp;Center</source>
         <translation>置中(&amp;C)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="831"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Center&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Center the paragraph.&lt;/p&gt;</source>
@@ -7366,23 +7283,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將段落置中。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="836"/>
-
         <source>Ctrl+E</source>
         <translation>Ctrl+E</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="848"/>
-
         <source>&amp;Justify</source>
         <translation>左右對齊(&amp;J)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="851"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Justify&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Align the paragraph to both the left and right margins.&lt;/p&gt;</source>
@@ -7392,21 +7303,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="856"/>
-
         <source>Ctrl+J</source>
         <translation>Ctrl+J</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="868"/>
-
         <source>&amp;Bold</source>
         <translation>粗體(&amp;B)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="871"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Bold&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Make the selected text bold.&lt;/p&gt;</source>
@@ -7415,21 +7321,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字設為粗體字。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="876"/>
-
         <source>Ctrl+B</source>
         <translation>Ctrl+B</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="888"/>
-
         <source>&amp;Italic</source>
         <translation>斜體(&amp;I)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="891"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Italic&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Make the selected text italic.&lt;/p&gt;</source>
@@ -7438,23 +7340,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字設為斜體字。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="896"/>
-
         <source>Ctrl+I</source>
         <translation>Ctrl+I</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="905"/>
-
         <source>&amp;Open...</source>
         <translation>開啟(&amp;O)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="908"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Open&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Open a book from disk.&lt;/p&gt;</source>
@@ -7463,23 +7359,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;從磁碟開啟一本書。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="913"/>
-
         <source>Ctrl+O</source>
         <translation>Ctrl+O</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="925"/>
-
         <source>&amp;Underline</source>
         <translation>底線(&amp;U)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="928"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Underline&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Underline the selected text.&lt;/p&gt;</source>
@@ -7488,55 +7378,42 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字加上底線。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="933"/>
-
         <source>Ctrl+U</source>
         <translation>Ctrl+U</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="942"/>
-
         <source>&amp;Quit</source>
         <translation>離開(&amp;Q)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="945"/>
-
         <source>Exit</source>
         <translation>離開</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="948"/>
-
         <source>Ctrl+Q</source>
         <translation>Ctrl+Q</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="957"/>
-
         <source>&amp;About...</source>
         <translation>關於(&amp;A)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="960"/>
-
         <source>Show information about Sigil.</source>
         <translation>顯示關於 Sigil 的資訊。</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="965"/>
-
         <source>Add &amp;Cover...</source>
         <translation>新增封面(&amp;C)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="968"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Add Cover&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Add a cover.&lt;/p&gt;</source>
@@ -7545,16 +7422,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;新增封面。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="979"/>
-
         <source>&amp;Metadata Editor...</source>
         <translation>中繼資料編輯器(&amp;M)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="982"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Metadata Editor&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Edit and display information about your book including the author and title.&lt;/p&gt;</source>
@@ -7563,21 +7436,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;編輯並顯示關於您的書本的資訊，包括作者與標題等。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="987"/>
-
         <source>F8</source>
         <translation>F8</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="996"/>
-
         <source>&amp;Generate Table Of Contents...</source>
         <translation>產生目錄(&amp;G)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="999"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Generate Table of Contents&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Generate a new Table of Contents from headings in your book.&lt;/p&gt;</source>
@@ -7587,20 +7456,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1004"/>
-
         <source>Ctrl+T</source>
         <translation>Ctrl+T</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1009"/>
-
         <source>&amp;Edit Table Of Contents...</source>
         <translation>編輯目錄(&amp;E)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1012"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Edit Table of Contents&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Directly edit the existing Table of Contents.&lt;/p&gt;</source>
@@ -7610,13 +7475,11 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1023"/>
-
         <source>&amp;Split At Cursor</source>
         <translation>在游標處分割(&amp;S)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1026"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Split At Cursor&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Split the current file into two files using your cursor location as the dividing point.&lt;/p&gt;</source>
@@ -7626,19 +7489,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1031"/>
-
         <source>Ctrl+Return</source>
         <translation>Ctrl+Return</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1040"/>
-
         <source>&amp;File...</source>
         <translation>檔案(&amp;F)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1043"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Insert File&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Select image, video or audio files from your book to insert into the text.&lt;/p&gt;
@@ -7652,19 +7512,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1050"/>
-
         <source>Ctrl+Shift+I</source>
         <translation>Ctrl+Shift+I</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1059"/>
-
         <source>&amp;Special Character...</source>
         <translation>特殊字元(&amp;S)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1062"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Insert Special Character&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Select a character to insert into your text.&lt;/p&gt;</source>
@@ -7673,16 +7530,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;選擇一特殊字元並插入文字中。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1073"/>
-
         <source>I&amp;D...</source>
         <translation>代碼(&amp;D)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1076"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Insert ID&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Insert or edit an anchor with an ID name to use as a link target.&lt;/p&gt;</source>
@@ -7691,16 +7544,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;插入或編輯定錨點，給連結目標一個代碼名稱。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1087"/>
-
         <source>&amp;Link...</source>
         <translation>連結(&amp;L)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1090"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Insert Link&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Insert or edit an anchor with a hyperlink to a target.&lt;/p&gt;</source>
@@ -7715,7 +7564,6 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1107"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Numbering&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Create a numbered list.&lt;/p&gt;</source>
@@ -7724,16 +7572,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;建立一編號清單。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1121"/>
-
         <source>Bulle&amp;ted List</source>
         <translation>項目符號清單(&amp;T)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1124"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Bullets&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Create a bulleted list.&lt;/p&gt;</source>
@@ -7743,20 +7587,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1129"/>
-
         <source>Ctrl+Shift+L</source>
         <translation>Ctrl+Shift+L</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1141"/>
-
         <source>Stri&amp;kethrough</source>
         <translation>刪除線(&amp;K)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1144"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Strikethrough&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Draw a line through the selected text.&lt;/p&gt;</source>
@@ -7765,16 +7605,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字加上刪除線。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1158"/>
-
         <source>&amp;Subscript</source>
         <translation>下標(&amp;S)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1161"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Subscript&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Set the selected text slightly smaller and below the normal line.&lt;/p&gt;</source>
@@ -7783,16 +7619,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字設為下標。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1175"/>
-
         <source>Su&amp;perscript</source>
         <translation>上標(&amp;P)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1178"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Superscript&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Set the selected text slightly smaller and above the normal line.&lt;/p&gt;</source>
@@ -7801,46 +7633,38 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;將選取的文字設為上標。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1189"/>
-
         <source>&amp;Print...</source>
         <translation>列印(&amp;P)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1192"/>
-
         <source>Print</source>
         <translation>列印</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1195"/>
-
         <source>Ctrl+P</source>
         <translation>Ctrl+P</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1204"/>
-
         <source>Print Pre&amp;view...</source>
         <translation>預覽列印(&amp;V)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1207"/>
-
         <source>Print Preview</source>
         <translation>預覽列印</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1212"/>
         <location filename="../../Form_Files/main.ui" line="1215"/>
-
         <source>Close</source>
         <translation>關閉</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1218"/>
-
         <source>Ctrl+Shift+W</source>
         <translation>Ctrl+Shift+W</translation>
     </message>
@@ -7856,50 +7680,41 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1235"/>
-
         <source>Zoom &amp;In</source>
         <translation>放大(&amp;I)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1238"/>
-
         <source>Zoom In</source>
         <translation>放大</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1241"/>
-
         <source>Ctrl+=</source>
         <translation>Ctrl+=</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1250"/>
-
         <source>Zoom &amp;Out</source>
         <translation>縮小(&amp;O)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1253"/>
-
         <source>Zoom Out</source>
         <translation>縮小</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1256"/>
-
         <source>Ctrl+-</source>
         <translation>Ctrl+-</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1265"/>
-
         <source>&amp;Find &amp;&amp; Replace...</source>
         <translation>尋找與取代(&amp;F)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1268"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Find &amp;amp; Replace&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Find and replace text in the document.&lt;/p&gt;</source>
@@ -7908,23 +7723,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;尋找並取代文件中的文字。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1273"/>
-
         <source>Ctrl+F</source>
         <translation>Ctrl+F</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1282"/>
-
         <source>Incre&amp;ase Indent</source>
         <translation>增加縮排(&amp;A)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1285"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Increase Indent&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Increase the indent level of the paragraph.&lt;/p&gt;</source>
@@ -7933,22 +7742,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;增加段落的縮排等級。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1290"/>
-
         <source>Ctrl+Alt+M</source>
         <translation>Ctrl+Alt+M</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1299"/>
-
         <source>&amp;Decrease Indent</source>
         <translation>減少縮排(&amp;D)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1302"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Decrease Indent&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Decrease the indent level of the paragraph.&lt;/p&gt;</source>
@@ -7957,23 +7761,18 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;減少段落的縮排等級。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1307"/>
         <location filename="../../Form_Files/main.ui" line="1718"/>
-
         <source>Ctrl+Shift+M</source>
         <translation>Ctrl+Shift+M</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1316"/>
-
         <source>Te&amp;xt Direction LTR</source>
         <translation>文字方向左到右(&amp;X)</translation>
     </message>
     <message>
-
-        <location filename="../../Form_Files/main.ui" line="1320"/>
-
+        <location filename="../../Form_Files/main.ui" line="1319"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Left-to-Right&lt;/b&gt;&lt;/p&gt;
 
@@ -7986,16 +7785,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1332"/>
-
         <source>T&amp;ext Direction RTL</source>
         <translation>文字方向右到左(&amp;E)</translation>
     </message>
     <message>
-
-        <location filename="../../Form_Files/main.ui" line="1336"/>
-
+        <location filename="../../Form_Files/main.ui" line="1335"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Right-to-Left&lt;/b&gt;&lt;/p&gt;
 
@@ -8009,13 +7804,11 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1348"/>
-
         <source>Text Directi&amp;on Default</source>
         <translation>文字方向預設(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../../Form_Files/main.ui" line="1352"/>
-
+        <location filename="../../Form_Files/main.ui" line="1351"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Default&lt;/b&gt;&lt;/p&gt;
 
@@ -8028,28 +7821,22 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1360"/>
-
         <source>Remove &amp;Formatting</source>
         <translation>移除格式(&amp;F)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1363"/>
-
         <source>Ctrl+Space</source>
         <translation>Ctrl+空白鍵</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1372"/>
-
         <source>&amp;Lowercase</source>
         <translation>小寫(&amp;L)</translation>
     </message>
     <message>
-
-        <location filename="../../Form_Files/main.ui" line="1376"/>
-
+        <location filename="../../Form_Files/main.ui" line="1375"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Lowercase&lt;/b&gt;&lt;/p&gt;
 
@@ -8062,23 +7849,17 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1382"/>
-
         <source>Alt+L</source>
         <translation>Alt+L</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1391"/>
-
         <source>&amp;Uppercase</source>
         <translation>大寫(&amp;U)</translation>
     </message>
     <message>
-
-        <location filename="../../Form_Files/main.ui" line="1395"/>
-
+        <location filename="../../Form_Files/main.ui" line="1394"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Uppercase&lt;/b&gt;&lt;/p&gt;
 
@@ -8092,21 +7873,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1401"/>
-
         <source>Alt+U</source>
         <translation>Alt+U</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1410"/>
-
         <source>&amp;Titlecase</source>
         <translation>首字母大寫(&amp;T)</translation>
     </message>
     <message>
-
-        <location filename="../../Form_Files/main.ui" line="1414"/>
-
+        <location filename="../../Form_Files/main.ui" line="1413"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Titlecase&lt;/b&gt;&lt;/p&gt;
 
@@ -8119,16 +7895,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1426"/>
-
         <source>&amp;Capitalize</source>
         <translation>首單字大寫(&amp;C)</translation>
     </message>
     <message>
-
-        <location filename="../../Form_Files/main.ui" line="1430"/>
-
+        <location filename="../../Form_Files/main.ui" line="1429"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Capitalize&lt;/b&gt;&lt;/p&gt;
 
@@ -8141,173 +7913,127 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1438"/>
-
         <source>Sigil Website...</source>
         <translation>Sigil 網站...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1443"/>
-
         <source>&amp;Next Tab</source>
         <translation>下一個分頁(&amp;N)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1446"/>
-
         <source>Ctrl+PgUp</source>
         <translation>Ctrl+PgUp</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1451"/>
-
         <source>&amp;Previous Tab</source>
         <translation>上一個分頁(&amp;P)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1454"/>
-
         <source>Ctrl+PgDown</source>
         <translation>Ctrl+PgDown</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1459"/>
-
         <source>&amp;Close Tab</source>
         <translation>關閉分頁(&amp;C)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1462"/>
-
         <source>Ctrl+W</source>
         <translation>Ctrl+W</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1467"/>
-
         <source>Split At &amp;Markers</source>
         <translation>從標記分割(&amp;M)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1470"/>
-
         <source>Split At Sigil split file markers</source>
         <translation>從 Sigil 分割檔案標記處分割</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1473"/>
-
         <source>F6</source>
         <translation>F6</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1478"/>
-
         <source>Split &amp;Marker</source>
         <translation>分割標記(&amp;M)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1481"/>
-
         <source>Insert Sigil split file marker</source>
         <translation>插入 Sigil 分割檔案標記</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1484"/>
-
         <source>Ctrl+Shift+Return</source>
         <translation>Ctrl+Shift+Return</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1489"/>
-
         <source>User &amp;Guide...</source>
         <translation>使用者導覽(&amp;G)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1492"/>
-
         <source>User Guide</source>
         <translation>使用者導覽</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1495"/>
-
         <source>F1</source>
         <translation>F1</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1500"/>
-
         <source>&amp;Frequently Asked Questions...</source>
         <translation>常見問題(&amp;F)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1503"/>
-
         <source>Frequently Asked Questions</source>
         <translation>常見問題</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1508"/>
-
         <source>&amp;Tutorials...</source>
         <translation>教學(&amp;T)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1511"/>
-
         <source>Tutorials</source>
         <translation>教學</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1516"/>
-
         <source>Well-Formed Check &amp;EPUB</source>
         <translation>&amp;EPUB 格式正確檢查</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1519"/>
-
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Well-Formed Check EPUB&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Verify your document complies with minimum needed to be successfully parsed. This does not indicate compliance with the relevant epub standards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;EPUB 格式正確檢查&lt;/span&gt;&lt;/p&gt;&lt;p&gt;驗證你的文件是否符合成功解析所需的最低要求。這並不表示符合相關的 epub 標準。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1522"/>
-
         <source>F7</source>
         <translation>F7</translation>
     </message>
     <message>
-
-        <location filename="../../Form_Files/main.ui" line="1525"/>
-
+        <location filename="../../Form_Files/main.ui" line="1527"/>
         <source>Validate Stylesheets With &amp;W3C</source>
         <translation>用 W3C 驗證樣式表(&amp;W)</translation>
     </message>
     <message>
-        <location filename="../../Form_Files/main.ui" line="1531"/>
-
+        <location filename="../../Form_Files/main.ui" line="1530"/>
         <source>
      &lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Validate Stylesheets with W3C&lt;/b&gt;&lt;/p&gt;
 
@@ -8320,16 +8046,12 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1543"/>
-
         <source>&amp;Spellcheck...</source>
         <translation>拼字檢查(&amp;S)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1546"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Spellcheck&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Find all misspelled words and allow you to add them to a dictionary or ignore them.&lt;/p&gt;</source>
@@ -8338,138 +8060,102 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;找出所有拼錯的單字，您可以將這些單字加入字典，或是忽略它們。&lt;/p&gt;</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1551"/>
-
         <source>Alt+Q</source>
         <translation>Alt+Q</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1559"/>
-
         <source>&amp;Highlight Misspelled Words</source>
         <translation>突顯拼錯的單字(&amp;H)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1562"/>
-
         <source>Enable or disable highlighting of misspelled words in Code View.</source>
         <translation>在代碼檢視中開啟或關閉突顯拼錯的單字。</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1567"/>
-
         <source>&amp;Next Misspelled Word</source>
         <translation>下一個拼錯的單字(&amp;N)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1570"/>
-
         <source>Find the next misspelled word in the book.</source>
         <translation>尋找書中下一個拼錯的單字。</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1573"/>
-
         <source>F4</source>
         <translation>F4</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1578"/>
-
         <source>&amp;Add Misspelled Word</source>
         <translation>新增單字(&amp;A)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1581"/>
-
         <source>Add the current misspelled word under the caret to the default user dictionary.</source>
         <translation>將目前的拼錯的單字新增到預設使用者字典中。</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1586"/>
-
         <source>&amp;Ignore Misspelled Word</source>
         <translation>忽略拼錯的單字(&amp;I)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1589"/>
-
         <source>Ignore the current misspelled word under the caret until Sigil is restarted.</source>
         <translation>忽略目前標記為拼錯的單字，直到重新啟動 Sigil 為止。</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1594"/>
-
         <source>&amp;Clear Ignored Words</source>
         <translation>清除被忽略的單字(&amp;C)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1597"/>
-
         <source>Clear currently ignored words from Spellcheck without having to restart Sigil.</source>
         <translation>清除拼字檢查標示為忽略的單字，而不需重啟 Sigil。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1602"/>
-
         <source>&amp;Index Editor...</source>
         <translation>索引編輯器(&amp;I)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1605"/>
-
         <source>Ctrl+Alt+I</source>
         <translation>Ctrl+Alt+I</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1610"/>
-
         <source>&amp;Delete Unused Media Files...</source>
         <translation>刪除未使用的媒體檔(&amp;D)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1615"/>
-
         <source>Delete &amp;Unused Stylesheet Classes...</source>
         <translation>刪除未使用的樣式表類別(&amp;U)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1620"/>
-
         <source>&amp;Reports...</source>
         <translation>報告(&amp;R)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1623"/>
-
         <source>Ctrl+Shift+R</source>
         <translation>Ctrl+Shift+R</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1632"/>
-
         <source>&amp;Donate...</source>
         <translation>捐助(&amp;D)...</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1635"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Donate&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Donate to support Sigil.&lt;/p&gt;
@@ -8480,526 +8166,427 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
 </translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1643"/>
-
         <source>Close &amp;Other Tabs</source>
         <translation>關閉其他分頁(&amp;O)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1646"/>
-
         <source>Ctrl+Alt+W</source>
         <translation>Ctrl+Alt+W</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1651"/>
-
         <source>Go To &amp;Line...</source>
         <translation>跳到行號(&amp;L)....</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1654"/>
-
         <source>Ctrl+/</source>
         <translation>Ctrl+/</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1659"/>
-
         <source>Find &amp;Next</source>
         <translation>尋找下一個(&amp;N)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1662"/>
-
         <source>Ctrl+G</source>
         <translation>Ctrl+G</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1667"/>
-
         <source>Find &amp;Previous</source>
         <translation>尋找上一個(&amp;P)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1670"/>
-
         <source>Ctrl+Shift+G</source>
         <translation>Ctrl+Shift+G</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1675"/>
-
         <source>Replace</source>
         <translation>取代</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1678"/>
-
         <source>Ctrl+R</source>
         <translation>Ctrl+R</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1683"/>
-
         <source>&amp;Replace/Find Next</source>
         <translation>取代/尋找下一個(&amp;R)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1686"/>
-
         <source>Ctrl+]</source>
         <translation>Ctrl+]</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1691"/>
-
         <source>R&amp;eplace/Find Previous</source>
         <translation>取代/尋找上一個(&amp;E)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1694"/>
-
         <source>Ctrl+[</source>
         <translation>Ctrl+[</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1699"/>
-
         <source>Replace &amp;All</source>
         <translation>全部取代(&amp;A)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1702"/>
-
         <source>Alt+A</source>
         <translation>Alt+A</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1707"/>
-
         <source>&amp;Count All</source>
         <translation>全部計算(&amp;C)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1710"/>
-
         <source>Alt+C</source>
         <translation>Alt+C</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1715"/>
-
         <source>Mar&amp;k Selected Text</source>
         <translation>標記選取的文字(&amp;K)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1723"/>
-
         <source>Find &amp;Next In File</source>
         <translation>在檔案中尋找下一個(&amp;N)</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1728"/>
-
         <source>&amp;Replace Next In File</source>
         <translation>在檔案中取代下一個(&amp;N)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1733"/>
-
         <source>Replace &amp;All In File</source>
         <translation>在檔案中全部取代(&amp;A)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1738"/>
-
         <source>&amp;Count All In File</source>
         <translation>在檔案中全部計算(&amp;C)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1743"/>
-
         <source>&amp;Saved Searches...</source>
         <translation>儲存搜尋(&amp;S)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1746"/>
-
         <source>Ctrl+Alt+F</source>
         <translation>Ctrl+Alt+F</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1751"/>
-
         <source>&amp;Clip Editor...</source>
         <translation>片段編輯器(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1754"/>
-
         <source>Open the Clip Editor.</source>
         <translation>開啟片段編輯器。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1757"/>
-
         <source>Ctrl+Alt+C</source>
         <translation>Ctrl+Alt+C</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1762"/>
-
         <source>Clip &amp;1</source>
         <translation>片段 &amp;1</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1765"/>
-
         <source>Insert Clip 1</source>
         <translation>插入片段 1</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1768"/>
-
         <source>Ctrl+Alt+1</source>
         <translation>Ctrl+Alt+1</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1773"/>
-
         <source>Clip &amp;2</source>
         <translation>片段 &amp;2</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1776"/>
-
         <source>Insert Clip 2</source>
         <translation>插入片段 2</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1779"/>
-
         <source>Ctrl+Alt+2</source>
         <translation>Ctrl+Alt+2</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1784"/>
-
         <source>Clip &amp;3</source>
         <translation>片段 &amp;3</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1787"/>
-
         <source>Insert Clip 3</source>
         <translation>插入片段 3</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1790"/>
-
         <source>Ctrl+Alt+3</source>
         <translation>Ctrl+Alt+3</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1795"/>
-
         <source>Clip &amp;4</source>
         <translation>片段 &amp;4</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1798"/>
-
         <source>Insert Clip 4</source>
         <translation>插入片段 4</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1801"/>
-
         <source>Ctrl+Alt+4</source>
         <translation>Ctrl+Alt+4</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1806"/>
-
         <source>Clip &amp;5</source>
         <translation>片段 &amp;5</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1809"/>
-
         <source>Insert Clip 5</source>
         <translation>插入片段 5</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1812"/>
-
         <source>Ctrl+Alt+5</source>
         <translation>Ctrl+Alt+5</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1817"/>
-
         <source>Clip &amp;6</source>
         <translation>片段 &amp;6</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1820"/>
-
         <source>Insert Clip 6</source>
         <translation>插入片段 6</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1823"/>
-
         <source>Ctrl+Alt+6</source>
         <translation>Ctrl+Alt+6</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1828"/>
-
         <source>Clip &amp;7</source>
         <translation>片段 &amp;7</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1831"/>
-
         <source>Insert Clip 7</source>
         <translation>插入片段 7</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1834"/>
-
         <source>Ctrl+Alt+7</source>
         <translation>Ctrl+Alt+7</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1839"/>
-
         <source>Clip &amp;8</source>
         <translation>片段 &amp;8</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1842"/>
-
         <source>Insert Clip 8</source>
         <translation>插入片段 8</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1845"/>
-
         <source>Ctrl+Alt+8</source>
         <translation>Ctrl+Alt+8</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1850"/>
-
         <source>Clip &amp;9</source>
         <translation>片段 &amp;9</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1853"/>
-
         <source>Insert Clip 9</source>
         <translation>插入片段 9</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1856"/>
-
         <source>Ctrl+Alt+9</source>
         <translation>Ctrl+Alt+9</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1861"/>
-
         <source>Clip 1&amp;0</source>
         <translation>片段 1&amp;0</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1864"/>
-
         <source>Insert Clip 10</source>
         <translation>插入片段 10</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1867"/>
-
         <source>Ctrl+Alt+0</source>
         <translation>Ctrl+Alt+0</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1872"/>
-
         <source>Clip 11</source>
         <translation>片段 11</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1875"/>
-
         <source>Insert Clip 11</source>
         <translation>插入片段 11</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1880"/>
-
         <source>Clip 12</source>
         <translation>片段 12</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1883"/>
-
         <source>Insert Clip 12</source>
         <translation>插入片段 12</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1888"/>
-
         <source>Clip 13</source>
         <translation>片段 13</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1891"/>
-
         <source>Insert Clip 13</source>
         <translation>插入片段 13</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1896"/>
-
         <source>Clip 14</source>
         <translation>片段 14</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1899"/>
-
         <source>Insert Clip 14</source>
         <translation>插入片段 14</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1904"/>
-
         <source>Clip 15</source>
         <translation>片段 15</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1907"/>
-
         <source>Insert Clip 15</source>
         <translation>插入片段 15</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1912"/>
-
         <source>Clip 16</source>
         <translation>片段 16</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1915"/>
-
         <source>Insert Clip 16</source>
         <translation>插入片段 16</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1920"/>
-
         <source>Clip 17</source>
         <translation>片段 17</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1923"/>
-
         <source>Insert Clip 17</source>
         <translation>插入片段 17</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1928"/>
-
         <source>Clip 18</source>
         <translation>片段 18</translation>
     </message>
     <message>
-
         <location filename="../../Form_Files/main.ui" line="1931"/>
-
         <source>Insert Clip 18</source>
         <translation>插入片段 18</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1936"/>
-
         <source>Clip 19</source>
         <translation>片段 19</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1939"/>
-
         <source>Insert Clip 19</source>
         <translation>插入片段 19</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1944"/>
-
         <source>Clip 20</source>
         <translation>片段 20</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1947"/>
-
         <source>Insert Clip 20</source>
         <translation>插入片段 20</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1952"/>
-
         <source>&amp;Preferences...</source>
         <translation>偏好設定(&amp;P)...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1955"/>
-
         <source>F5</source>
         <translation>F5</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1960"/>
-
         <source>&amp;Zoom Reset</source>
         <translation>重設縮放(&amp;Z)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1963"/>
-
         <source>Zoom Reset</source>
         <translation>重設縮放</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1966"/>
-
         <source>Ctrl+0</source>
         <translation>Ctrl+0</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1978"/>
-
         <source>Heading &amp;1</source>
         <translation>標題 &amp;1</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1981"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Heading 1&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Format paragraph as a level 1 heading.&lt;/p&gt;</source>
@@ -9009,19 +8596,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1986"/>
-
         <source>Ctrl+1</source>
         <translation>Ctrl+1</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="1998"/>
-
         <source>Heading &amp;2</source>
         <translation>標題 &amp;2</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2001"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Heading 2&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Format paragraph as a level 2 heading.&lt;/p&gt;</source>
@@ -9031,19 +8615,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2006"/>
-
         <source>Ctrl+2</source>
         <translation>Ctrl+2</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2018"/>
-
         <source>Heading &amp;3</source>
         <translation>標題 &amp;3</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2021"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Heading 3&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Format paragraph as a level 3 heading.&lt;/p&gt;</source>
@@ -9053,19 +8634,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2026"/>
-
         <source>Ctrl+3</source>
         <translation>Ctrl+3</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2038"/>
-
         <source>Heading &amp;4</source>
         <translation>標題 &amp;4</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2041"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Heading 4&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Format paragraph as a level 4 heading.&lt;/p&gt;</source>
@@ -9075,19 +8653,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2046"/>
-
         <source>Ctrl+4</source>
         <translation>Ctrl+4</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2058"/>
-
         <source>Heading &amp;5</source>
         <translation>標題 &amp;5</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2061"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Heading 5&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Format paragraph as a level 5 heading.&lt;/p&gt;</source>
@@ -9097,19 +8672,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2066"/>
-
         <source>Ctrl+5</source>
         <translation>Ctrl+5</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2078"/>
-
         <source>Heading &amp;6</source>
         <translation>標題 &amp;6</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2081"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Heading 6&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Format paragraph as a level 6 heading.&lt;/p&gt;</source>
@@ -9119,19 +8691,16 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2086"/>
-
         <source>Ctrl+6</source>
         <translation>Ctrl+6</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2098"/>
-
         <source>&amp;Normal</source>
         <translation>一般(&amp;N)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2101"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Paragraph&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Format paragraph as a normal paragraph.&lt;/p&gt;</source>
@@ -9141,43 +8710,36 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2106"/>
-
         <source>Ctrl+7</source>
         <translation>Ctrl+7</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2114"/>
-
         <source>&amp;Preserve Existing Attributes</source>
         <translation>預留現有的屬性(&amp;P)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2117"/>
-
         <source>When applying this style, preserve any existing attributes on the tag</source>
         <translation>套用此樣式表時，保留標籤裡的所有現有的屬性</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2122"/>
-
         <source>Blank HTML File</source>
         <translation>空白 HTML 檔案</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2125"/>
-
         <source>Add a new blank HTML file to the book.</source>
         <translation>新增空白的 HTML 檔到書本中。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2134"/>
-
         <source>Existing Files...</source>
         <translation>已存在的檔案...</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2137"/>
-
         <source>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;Add Existing Files&lt;/b&gt;&lt;/p&gt;
 
 &lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Add files from your computer to the book.&lt;/p&gt;</source>
@@ -9187,91 +8749,76 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2144"/>
-
         <source>Blank Stylesheet</source>
         <translation>空白樣式</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2147"/>
-
         <source>Add a new blank stylesheet to the book.</source>
         <translation>新增空白樣式到書本中。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2152"/>
-
         <source>Blank SVG Image</source>
         <translation>空白 SVG 圖片</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2155"/>
-
         <source>Add a new blank svg image file to the book.</source>
         <translation>新增空白的 SVG 圖片檔到書本中。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2160"/>
-
         <source>Pre&amp;vious File</source>
         <translation>上一個檔案(&amp;V)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2163"/>
-
         <source>Open previous file of the same type.</source>
         <translation>開啟前一個相同型態的檔案。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2166"/>
-
         <source>Alt+PgUp</source>
         <translation>Alt+PgUp</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2171"/>
-
         <source>Next &amp;File</source>
         <translation>下一個檔案(&amp;F)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2174"/>
-
         <source>Open next file of the same type.</source>
         <translation>開啟下一個相同型態的檔案。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2177"/>
-
         <source>Alt+PgDown</source>
         <translation>Alt+PgDown</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2182"/>
-
         <source>&amp;Add To Index Editor</source>
         <translation>新增到索引編輯器(&amp;A)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2185"/>
-
         <source>Add the selected text to the Index Editor.</source>
         <translation>新增選取的文字到索引編輯器中。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2190"/>
-
         <source>&amp;Mark For Index</source>
         <translation>標記做索引(&amp;M)</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2193"/>
-
         <source>Mark the selected text for inclusion in the Index.</source>
         <translation>標記選取的文字以便加入索引中。</translation>
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="2196"/>
-
         <source>Ctrl+Shift+X</source>
         <translation>Ctrl+Shift+X</translation>
     </message>
@@ -9555,7 +9102,7 @@ This action cannot be reversed.</source>
         <location filename="../../MainUI/MainWindow.cpp" line="2203"/>
         <location filename="../../MainUI/MainWindow.cpp" line="2216"/>
         <location filename="../../MainUI/MainWindow.cpp" line="2229"/>
-		<location filename="../../MainUI/MainWindow.cpp" line="2234"/>
+        <location filename="../../MainUI/MainWindow.cpp" line="2234"/>
         <location filename="../../MainUI/MainWindow.cpp" line="2246"/>
         <location filename="../../MainUI/MainWindow.cpp" line="2256"/>
         <location filename="../../MainUI/MainWindow.cpp" line="2261"/>
@@ -9566,7 +9113,7 @@ This action cannot be reversed.</source>
         <location filename="../../MainUI/MainWindow.cpp" line="2542"/>
         <location filename="../../MainUI/MainWindow.cpp" line="2574"/>
         <location filename="../../MainUI/MainWindow.cpp" line="3725"/>
-		<location filename="../../MainUI/MainWindow.cpp" line="3731"/>
+        <location filename="../../MainUI/MainWindow.cpp" line="3731"/>
         <location filename="../../MainUI/MainWindow.cpp" line="3737"/>
         <location filename="../../MainUI/MainWindow.cpp" line="3772"/>
         <location filename="../../MainUI/MainWindow.cpp" line="3778"/>
@@ -9814,7 +9361,7 @@ This action cannot be reversed.</source>
         <translation>項目不合法 - 不能含有 &apos;&lt;&apos; 或 &apos;&gt;&apos;</translation>
     </message>
     <message>
-        <location filename="../../MainUI/MainWindow.cpp" line="2246"/>
+        <location filename="../../MainUI/MainWindow.cpp" line="2261"/>
         <source>You cannot mark an index at this position.</source>
         <translation>您不能在此位置標記索引。</translation>
     </message>
@@ -9969,7 +9516,7 @@ This action cannot be reversed.</source>
         <translation>無法分割：%1，因為 XML 格式不正確</translation>
     </message>
     <message>
-        <location filename="../../MainUI/MainWindow.cpp" line="3772"/>
+        <location filename="../../MainUI/MainWindow.cpp" line="3784"/>
         <source>Cannot split since at least one file may not be an HTML file.</source>
         <translation>無法分割，因為至少有一個檔不是 HTML 檔。</translation>
     </message>

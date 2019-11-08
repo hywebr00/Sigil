@@ -503,7 +503,7 @@ private:
     QAction *m_AddSemantics;
     QAction *m_SaveAs;
     QAction *m_ValidateWithW3C;
-
+	QAction *m_AddNewFullImage;
     QMenu *m_OpenWithContextMenu;
     QAction *m_OpenWith;
     QAction *m_OpenWithEditor0;
