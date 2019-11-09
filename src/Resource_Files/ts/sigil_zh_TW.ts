@@ -6995,6 +6995,7 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     </message>
     <message>
         <location filename="../../Form_Files/main.ui" line="403"/>
+        <location filename="../../MainUI/MainWindow.cpp" line="5725"/>
         <source>Insert</source>
         <translation>插入</translation>
     </message>
@@ -7660,6 +7661,7 @@ Stylesheets that are listed first take precedence over later stylesheets.</sourc
     <message>
         <location filename="../../Form_Files/main.ui" line="1212"/>
         <location filename="../../Form_Files/main.ui" line="1215"/>
+        <location filename="../../MainUI/MainWindow.cpp" line="5716"/>
         <source>Close</source>
         <translation>關閉</translation>
     </message>

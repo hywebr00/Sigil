@@ -5709,14 +5709,26 @@ void MainWindow::BreakTabConnections(ContentTab *tab)
 
 void MainWindow::updatePalette()
 {
-	QColorDialog cd(Qt::red);
-	cd.setOptions(QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog);
-	connect((const QObject*)&cd, SIGNAL(currentColorChanged(QColor)), this, SLOT(colorChanged(QColor)));
-	cd.exec();
+	m_cd = new QColorDialog(this);
+	if (QDialogButtonBox *btnBox = m_cd->findChild<QDialogButtonBox *>())
+	{
+		if (QPushButton *btnCancel = btnBox->button(QDialogButtonBox::Cancel))
+			btnCancel->setText(tr("Close"));
+
+		if (QPushButton *btnOk = btnBox->button(QDialogButtonBox::Ok))
+		{
+			btnBox->removeButton(btnOk);
+		}
+		QPushButton *btnInsert = btnBox->addButton(tr("Insert"), QDialogButtonBox::ActionRole);   //QDialogButtonBox::Apply);
+		connect(btnInsert, SIGNAL(clicked()), this, SLOT(colorChanged()));
+	}
+	m_cd->show();
 }
 
-void MainWindow::colorChanged(QColor color)
+void MainWindow::colorChanged()
 {
-	QClipboard *board = QApplication::clipboard();
-	board->setText(color.name(QColor::HexRgb));
+	//QClipboard *board = QApplication::clipboard();
+	//board->setText(color.name(QColor::HexRgb));
+	m_LastPasteTarget->PasteText(m_cd->currentColor().name(QColor::HexRgb));
+	
 }

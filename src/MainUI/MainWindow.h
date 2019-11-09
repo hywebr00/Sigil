@@ -28,7 +28,7 @@
 
 #include <QtCore/QSharedPointer>
 #include <QtWidgets/QMainWindow>
-
+#include <QColorDialog>
 #include "ui_main.h"
 #include "BookManipulation/Book.h"
 #include "BookManipulation/BookReports.h"
@@ -609,7 +609,7 @@ private slots:
     void SetPreserveHeadingAttributes(bool new_state);
 
 	void updatePalette();
-	void colorChanged(QColor);
+	void colorChanged();
 
     void GoBackFromLinkOrStyle();
     void GoToBookmark(LocationBookmark *locationBookmark);
@@ -997,7 +997,7 @@ private:
     QStringList m_pluginList;
     bool m_SaveCSS;
     bool m_IsClosing;
-
+	QColorDialog *m_cd;
     QList<QAction*> m_qlactions;
     /**
      * Holds all the widgets Qt Designer created for us.
