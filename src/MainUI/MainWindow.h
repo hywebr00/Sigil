@@ -101,8 +101,15 @@ public:
      * @param parent The window's parent object.
      * @param flags The flags used to modify window behavior.
      */
-    MainWindow(const QString &openfilepath = QString(), bool is_internal = false, QWidget *parent = 0, Qt::WindowFlags flags = 0);
+    MainWindow(const QString &openfilepath = QString(), 
+	       const QString version = QString(),
+	       bool is_internal = false, 
+	       QWidget *parent = 0, 
+	       Qt::WindowFlags flags = 0);
     ~MainWindow();
+
+    // returns true if MainWindow is Maximized or is FullScreen
+    bool isMaxOrFull();
 
     /**
      * The book currently being edited.
@@ -193,6 +200,7 @@ public:
 
     QString GetCurrentFilePath();
 
+    void DebugCurrentWidgetSizes();
 
 public slots:
 
@@ -260,12 +268,20 @@ protected:
 
 private slots:
 
+    void UpdateLastSizes();
+
+    void RestoreLastNormalGeometry();
+
     void AddCover();
+
 
     /**
      * Implements New action functionality.
      */
-    void New();
+    void New(const QString version = QString());
+    void NewDefault();
+    void NewEpub2();
+    void NewEpub3();
 
     /**
      * Implements Open action functionality.
@@ -672,6 +688,8 @@ private:
      */
     bool MaybeSaveDialogSaysProceed();
 
+    bool ProceedToOverwrite(const QString &msg, const QString &filename );
+
     /**
      * Makes the provided book the current one.
      *
@@ -683,7 +701,7 @@ private:
      * Creates a new, empty book and replaces
      * the current one with it.
      */
-    void CreateNewBook(const QStringList &book_paths=QStringList());
+    void CreateNewBook(const QString version=QString(), const QStringList &book_paths=QStringList());
 
     /**
      * Saves the current book to the file specified.
@@ -792,7 +810,7 @@ private:
      *
      * @param openfilepath The path to the file to load. Can be empty.
      */
-    void LoadInitialFile(const QString &openfilepath, bool is_internal = false);
+    void LoadInitialFile(const QString &openfilepath, const QString version=QString(), bool is_internal = false);
 
     /**
      * Connects all the required signals to their slots.
@@ -936,7 +954,6 @@ private:
      */
     QSignalMapper *m_headingMapper;
     QSignalMapper *m_casingChangeMapper;
-    QSignalMapper *m_pluginMapper;
 
     /**
      * The Search Manager dialog
@@ -977,6 +994,10 @@ private:
      * Workaround for Qt 4.8 bug, to track the last known window size when not maximized.
      */
     QByteArray m_LastWindowSize;
+    QByteArray m_LastState;
+    bool m_FirstTime;
+    bool m_PendingLastSizeUpdate;
+    bool m_SaveLastEnabled;
 
     QTimer m_PreviewTimer;
 

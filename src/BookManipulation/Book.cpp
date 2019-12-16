@@ -52,14 +52,14 @@ static const QString EMPTY_HTML_FILE  = "<?xml version=\"1.0\" encoding=\"utf-8\
                                         "  \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n\n"
                                         "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
                                         "<head>\n"
-                                        "<title></title>\n"
-                                        "</head>\n"
+                                        "  <title></title>\n"
+                                        "</head>\n\n"
                                         "<body>\n"
 
                                         // The "nbsp" is here so that the user starts writing
                                         // inside the <p> element; if it's not here, webkit
                                         // inserts text _outside_ the <p> element
-                                        "<p>&nbsp;</p>\n"
+                                        "  <p>&nbsp;</p>\n"
                                         "</body>\n"
                                         "</html>";
 
@@ -67,14 +67,14 @@ static const QString EMPTY_HTML5_FILE  = "<?xml version=\"1.0\" encoding=\"utf-8
                                         "<!DOCTYPE html>\n\n"
                                         "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\">\n"
                                         "<head>\n"
-                                        "<title></title>\n"
-                                        "</head>\n"
+                                        "  <title></title>\n"
+                                        "</head>\n\n"
                                         "<body>\n"
 
                                         // The numeric entity for nbsp is here so that the user starts writing
                                         // inside the <p> element; if it's not here, webkit
                                         // inserts text _outside_ the <p> element, Epub3 requires numeric entities
-                                        "<p>&#160;</p>\n"
+                                        "  <p>&#160;</p>\n"
                                         "</body>\n"
                                         "</html>";
 
@@ -88,7 +88,7 @@ const QString EMPTY_NAV_FILE_START =
     "<head>\n"
     "  <title></title>\n"
     "  <meta charset=\"utf-8\" />\n"
-    "  <link href=\"../Styles/%3\" rel=\"stylesheet\" type=\"text/css\"/>"
+    "  <link href=\"%3\" rel=\"stylesheet\" type=\"text/css\"/>"
     "</head>\n"
     "<body epub:type=\"frontmatter\">\n";
 
@@ -97,7 +97,7 @@ const QString EMPTY_NAV_FILE_TOC =
     "    <h1>%1</h1>\n"
     "    <ol>\n"
     "      <li>\n"
-    "        <a href=\"../Text/%2\">%3</a>\n"
+    "        <a href=\"%2\">%3</a>\n"
     "      </li>\n"
     "    </ol>\n"
     "  </nav>\n";
@@ -454,12 +454,17 @@ HTMLResource *Book::CreateEmptyHTMLFile(const QString &folderpath)
 }
 
 
-HTMLResource *Book::CreateEmptyNavFile(bool update_opf, const QString &folderpath, const QString& navname)
+HTMLResource *Book::CreateEmptyNavFile(bool update_opf,
+				       const QString &folderpath,
+				       const QString &navname,
+				       const QString &first_textdir)
 {
     bool found_css = false;
+    Resource * styleresource = NULL;
     QList<Resource*> resources = GetFolderKeeper()->GetResourceTypeAsGenericList<CSSResource>(false);
     foreach(Resource *resource, resources) {
         if (resource->Filename() == SGC_NAV_CSS_FILENAME) {
+	    styleresource = resource;
             found_css = true;
             break;
         }
@@ -473,10 +478,10 @@ HTMLResource *Book::CreateEmptyNavFile(bool update_opf, const QString &folderpat
             css_path = tempfolder.GetPath() + "/" + SGC_NAV_CSS_FILENAME;
             Utility::WriteUnicodeTextFile(SGC_NAV_CSS_FILE, css_path);
         }
-        Resource * resource = m_Mainfolder->AddContentFileToFolder(css_path, 
-								   update_opf, 
-								   "text/css");
-        CSSResource *css_resource = qobject_cast<CSSResource *> (resource);
+        styleresource = m_Mainfolder->AddContentFileToFolder(css_path, 
+							     update_opf, 
+							     "text/css");
+        CSSResource *css_resource = qobject_cast<CSSResource *> (styleresource);
         // Need to make sure InitialLoad is done in newly added css resource object to prevent
         // blank css issues after a save to disk
         if (css_resource) css_resource->InitialLoad();       
@@ -490,6 +495,17 @@ HTMLResource *Book::CreateEmptyNavFile(bool update_opf, const QString &folderpat
 							       "application/xhtml+xml",
 							       QString(),
 							       folderpath);
+
+    // get the informtion we need to correctly fill the template
+    QString navbookpath = resource->GetRelativePath();
+    QString navstylebookpath = styleresource->GetRelativePath();
+    QString textdir = GetFolderKeeper()->GetDefaultFolderForGroup("Text");
+    if (first_textdir != "\\") textdir = first_textdir;
+    QString first_section_bookpath = FIRST_SECTION_NAME;
+    if (!textdir.isEmpty()) first_section_bookpath = textdir + "/" + FIRST_SECTION_NAME;
+    QString stylehref = Utility::URLEncodePath(Utility::buildRelativePath(navbookpath, navstylebookpath));
+    QString texthref = Utility::URLEncodePath(Utility::buildRelativePath(navbookpath, first_section_bookpath));
+    
     HTMLResource * html_resource = qobject_cast<HTMLResource *>(resource);
     SettingsStore ss;
     QString defaultLanguage = ss.defaultMetadataLang();
@@ -497,8 +513,8 @@ HTMLResource *Book::CreateEmptyNavFile(bool update_opf, const QString &folderpat
     QString guidetitle = Landmarks::instance()->GetName("landmarks");
     QString start = tr("Start");
     QString navtext = 
-        EMPTY_NAV_FILE_START.arg(defaultLanguage).arg(defaultLanguage).arg(SGC_NAV_CSS_FILENAME) +
-        EMPTY_NAV_FILE_TOC.arg(navtitle).arg(FIRST_SECTION_NAME).arg(start) + 
+        EMPTY_NAV_FILE_START.arg(defaultLanguage).arg(defaultLanguage).arg(stylehref) +
+        EMPTY_NAV_FILE_TOC.arg(navtitle).arg(texthref).arg(start) + 
         EMPTY_NAV_FILE_LANDMARKS.arg(guidetitle).arg(navtitle) +
         EMPTY_NAV_FILE_END;
     html_resource->SetText(navtext);
@@ -989,6 +1005,31 @@ QHash<QString, QStringList> Book::GetImagesInHTMLFiles()
     return images_in_html;
 }
 
+QHash< QString, std::pair<int,int> > Book::GetSpellWordCountsInHTMLFiles()
+{
+    QHash< QString, std::pair<int,int> > words_in_html;
+    const QList<HTMLResource *> html_resources = m_Mainfolder->GetResourceTypeList<HTMLResource>(false);
+    QFuture<std::tuple<QString, std::pair<int,int> > > future = QtConcurrent::mapped(html_resources, GetWordCountsInHTMLFileMapped);
+    for (int i = 0; i < future.results().count(); i++) {
+        QString bookpath;
+	std::pair<int, int> word_counts;
+        std::tie(bookpath, word_counts) = future.resultAt(i);
+        words_in_html[bookpath] = word_counts;
+    }
+    return words_in_html;
+}
+
+
+std::tuple<QString, std::pair<int,int> > Book::GetWordCountsInHTMLFileMapped(HTMLResource *html_resource)
+{
+    QString html_bookpath = html_resource->GetRelativePath();
+    std::pair<int,int> counts;
+    counts.first = HTMLSpellCheck::CountAllWords(html_resource->GetText());
+    counts.second = HTMLSpellCheck::CountMisspelledWords(html_resource->GetText());
+    return std::make_tuple(html_bookpath, counts);
+}
+
+
 QHash<QString, QStringList> Book::GetVideoInHTMLFiles()
 {
     QHash<QString, QStringList> video_in_html;
@@ -1119,14 +1160,23 @@ std::tuple<QString, QStringList> Book::GetAudioInHTMLFileMapped(HTMLResource *ht
 QList<HTMLResource *> Book::GetNonWellFormedHTMLFiles()
 {
     QList<HTMLResource *> malformed_resources;
-
-    foreach (HTMLResource *h, m_Mainfolder->GetResourceTypeList<HTMLResource>(false)) {
-      if (!IsDataWellFormed(h)) {
-            malformed_resources << h;
-        }
+    QList<HTMLResource *> html_resources = m_Mainfolder->GetResourceTypeList<HTMLResource>(false);
+    QFuture< std::pair<HTMLResource*, bool> > well_future;
+    well_future = QtConcurrent::mapped(html_resources, ResourceWellFormedMap);
+    for (int i = 0; i < well_future.results().count(); i++) {
+	std::pair<HTMLResource*, bool> res = well_future.resultAt(i);
+        if (!res.second) malformed_resources << res.first;
     }
-
     return malformed_resources;
+}
+
+std::pair<HTMLResource*, bool> Book::ResourceWellFormedMap(HTMLResource * html_resource) {
+    std::pair<HTMLResource*, bool> res;
+    res.first = html_resource;
+    XhtmlDoc::WellFormedError error = XhtmlDoc::WellFormedErrorForSource(html_resource->GetText(),
+                                                                         html_resource->GetEpubVersion());
+    res.second = (error.line == -1);
+    return res;
 }
 
 QSet<QString> Book::GetWordsInHTMLFiles()

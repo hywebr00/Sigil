@@ -168,7 +168,8 @@ public:
      */
     HTMLResource *CreateEmptyNavFile(bool update_opf = false, 
 				     const QString &folderpath=QString("\\"), 
-				     const QString &navname=QString("nav.xhtml"));
+				     const QString &navname=QString("nav.xhtml"),
+				     const QString &first_textdir=QString("\\"));
 
     /**
      * Creates a new HTMLResource file with a basic XHTML structure
@@ -251,15 +252,18 @@ public:
     QHash<QString, QStringList> GetImagesInHTMLFiles();
     QHash<QString, QStringList> GetVideoInHTMLFiles();
     QHash<QString, QStringList> GetAudioInHTMLFiles();
-
+    QHash< QString, std::pair<int,int> > GetSpellWordCountsInHTMLFiles();
     QHash<QString, QStringList> GetHTMLFilesUsingMedia();
     QHash<QString, QStringList> GetHTMLFilesUsingImages();
+
     static std::tuple<QString, QStringList> GetMediaInHTMLFileMapped(HTMLResource *html_resource);
     static std::tuple<QString, QStringList> GetImagesInHTMLFileMapped(HTMLResource *html_resource);
     static std::tuple<QString, QStringList> GetVideoInHTMLFileMapped(HTMLResource *html_resource);
     static std::tuple<QString, QStringList> GetAudioInHTMLFileMapped(HTMLResource *html_resource);
+    static std::tuple<QString, std::pair<int,int> > GetWordCountsInHTMLFileMapped(HTMLResource *html_resource);
 
     QList<HTMLResource *> GetNonWellFormedHTMLFiles();
+    static std::pair<HTMLResource*, bool> ResourceWellFormedMap(HTMLResource * html_resource);
 
     QHash<QString, int> CountAllLinksInHTML();
 

@@ -1,6 +1,6 @@
 /************************************************************************
 **
-**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford, Ontario Canada
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford Ontario Canada
 **  Copyright (C) 2019      Doug Massay
 **  Copyright (C) 2012-2015 John Schember <john@nachtimwald.com>
 **  Copyright (C) 2012-2013 Dave Heiland
@@ -31,6 +31,9 @@
 #include <QFuture>
 #include <QtGui/QDesktopServices>
 #include <QtGui/QImage>
+#include <QDesktopWidget>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QMessageBox>
@@ -43,6 +46,8 @@
 #include <QStringList>
 #include <QFont>
 #include <QFontMetrics>
+#include <QEvent>
+#include <QWindowStateChangeEvent>
 #include <QDebug>
 #include <QColorDialog>
 
@@ -105,6 +110,7 @@
 #include "Tabs/TabManager.h"
 #include "MainUI/MainApplication.h"
 
+#define DWINGEO if(0)
 #define DBG if(0)
 
 static const int TEXT_ELIDE_WIDTH   = 300;
@@ -124,6 +130,7 @@ static const QString USER_GUIDE_URL = "http://sigil-ebook.com/documentation";
 
 static const QString BOOK_BROWSER_NAME            = "bookbrowser";
 static const QString FIND_REPLACE_NAME            = "findreplace";
+static const QString TAB_MANAGER_NAME             = "tabmgr";
 static const QString VALIDATION_RESULTS_VIEW_NAME = "validationresultsname";
 static const QString TABLE_OF_CONTENTS_NAME       = "tableofcontents";
 static const QString PREVIEW_WINDOW_NAME          = "previewwindow";
@@ -147,7 +154,11 @@ static const QString CUSTOM_PREVIEW_STYLE_FILENAME = "custom_preview_style.css";
 
 QStringList MainWindow::s_RecentFiles = QStringList();
 
-MainWindow::MainWindow(const QString &openfilepath, bool is_internal, QWidget *parent, Qt::WindowFlags flags)
+MainWindow::MainWindow(const QString &openfilepath, 
+		       const QString version,
+		       bool is_internal,
+		       QWidget *parent,
+		       Qt::WindowFlags flags)
     :
     QMainWindow(parent, flags),
     m_LastOpenFileWarnings(QStringList()),
@@ -171,7 +182,6 @@ MainWindow::MainWindow(const QString &openfilepath, bool is_internal, QWidget *p
     c_LoadFilters(GetLoadFiltersMap()),
     m_headingMapper(new QSignalMapper(this)),
     m_casingChangeMapper(new QSignalMapper(this)),
-    m_pluginMapper(new QSignalMapper(this)),
     m_SearchEditor(new SearchEditor(this)),
     m_ClipEditor(new ClipEditor(this)),
     m_IndexEditor(new IndexEditor(this)),
@@ -186,6 +196,10 @@ MainWindow::MainWindow(const QString &openfilepath, bool is_internal, QWidget *p
     m_LastPasteTarget(NULL),
     m_ZoomPreview(false),
     m_LastWindowSize(QByteArray()),
+    m_LastState(QByteArray()),
+    m_FirstTime(true),
+    m_PendingLastSizeUpdate(false),
+    m_SaveLastEnabled(false),
     m_PreviousHTMLResource(NULL),
     m_PreviousHTMLText(QString()),
     m_PreviousHTMLLocation(QList<ElementIndex>()),
@@ -198,7 +212,6 @@ MainWindow::MainWindow(const QString &openfilepath, bool is_internal, QWidget *p
     m_IsClosing(false)
 {
     ui.setupUi(this);
-
     // Telling Qt to delete this window
     // from memory when it is closed
     setAttribute(Qt::WA_DeleteOnClose);
@@ -213,7 +226,7 @@ MainWindow::MainWindow(const QString &openfilepath, bool is_internal, QWidget *p
     CreateRecentFilesActions();
     UpdateRecentFileActions();
     ChangeSignalsWhenTabChanges(NULL, m_TabManager->GetCurrentContentTab());
-    LoadInitialFile(openfilepath, is_internal);
+    LoadInitialFile(openfilepath, version, is_internal);
     loadPluginsMenu();
 
 	m_TabManager->setMovable(true);
@@ -232,8 +245,8 @@ MainWindow::~MainWindow()
         m_ViewImage = NULL;
     }
 
-#ifdef Q_OS_MAC
-    DBG qDebug() << "In MainWindow destructor in mac only part";
+#ifdef Q_OS_MAC  // speeds cleaningup of old modal dialogs
+    // DBG qDebug() << "In MainWindow destructor in mac only part";
     if (m_ClipboardHistorySelector) delete m_ClipboardHistorySelector;
     if (m_LinkOrStyleBookmark) delete m_LinkOrStyleBookmark;
     if (m_Reports) delete m_Reports;
@@ -243,7 +256,6 @@ MainWindow::~MainWindow()
     if (m_IndexEditor) delete m_IndexEditor;
     if (m_ClipEditor) delete m_ClipEditor;
     if (m_SearchEditor) delete m_SearchEditor;
-    if (m_pluginMapper) delete m_pluginMapper;
     if (m_casingChangeMapper) delete m_casingChangeMapper;
     if (m_headingMapper) delete m_headingMapper;
     if (m_lbZoomLabel) delete m_lbZoomLabel;
@@ -258,7 +270,6 @@ MainWindow::~MainWindow()
 #endif
 
 }
-
 
 // Note on Mac OS X you may only add a QMenu or SubMenu to the MenuBar Once!
 // Actions can be removed
@@ -276,11 +287,14 @@ void MainWindow::loadPluginsMenu()
     // Setup up for quick launch of plugins
     int i = 0;
     foreach(QAction* pa, m_qlactions){
-        connect(pa, SIGNAL(triggered()), m_pluginMapper, SLOT(map()));
-        m_pluginMapper->setMapping(pa, i);
-	i++;
+        // Use the new signal/slot syntax and use a lambda to
+        // eliminate the need for the obsoleted QSignalMapper.
+        // [captured variables]() {...anonymous processing to do...;}
+        connect(pa, &QAction::triggered, this, [this,i]() {
+            MainWindow::QuickLaunchPlugin(i);
+        });
+	    i++;
     }
-    connect(m_pluginMapper, SIGNAL(mapped(int)), this, SLOT(QuickLaunchPlugin(int)));
 
     QHash<QString, Plugin *> plugins = pdb->all_plugins();
 
@@ -313,7 +327,7 @@ void MainWindow::loadPluginsMenu()
     updateToolTipsOnPluginIcons();
 
     QStringList keys = plugins.keys();
-    keys.sort();
+    keys.sort(Qt::CaseInsensitive);
     m_pluginList = keys;
 
     foreach(QString key, keys) {
@@ -382,10 +396,8 @@ void MainWindow::unloadPluginsMenu()
         }
     }
     disconnect(m_actionManagePlugins, SIGNAL(triggered()), this, SLOT(ManagePluginsDialog()));
-    disconnect(m_pluginMapper, SIGNAL(mapped(int)), this, SLOT(QuickLaunchPlugin(int)));
     foreach(QAction * pa, m_qlactions) {
-        m_pluginMapper->removeMappings(pa);
-        disconnect(pa, SIGNAL(triggered()), m_pluginMapper, SLOT(map()));
+        disconnect(pa, &QAction::triggered, this, nullptr);
     }
 }
 
@@ -458,7 +470,7 @@ void MainWindow::StandardizeEpub()
     if (QFileInfo(apath) != QFileInfo(bpath)) {
         fs_case_sensitive = true;
     }
-    qDebug() << "file system is case sensitive: " << fs_case_sensitive;
+    DBG qDebug() << "file system is case sensitive: " << fs_case_sensitive;
 
     if (!fs_case_sensitive) {
         // opf is first to handle OEBPS before fighting with its subdirectories
@@ -472,7 +484,7 @@ void MainWindow::StandardizeEpub()
 	    bpath = mainfolder + "/" + folderpath;
 	    if (QFileInfo(apath).exists() && QFileInfo(apath).isDir()) {
 	        bool result = mf.rename(folderpath.toLower(), folderpath);
-		qDebug() << "rename directory: " << folderpath << result;
+		DBG qDebug() << "rename directory: " << folderpath << result;
 	    }
         }
     }
@@ -645,8 +657,11 @@ void MainWindow::runPlugin(QAction *action)
         pname = altname;
     }
 #endif
-    PluginRunner prunner(m_TabManager, this);
-    prunner.exec(pname);
+    {
+        PluginRunner prunner(m_TabManager, this);
+        prunner.exec(pname);
+    }
+    qApp->processEvents();
 }
 
 void MainWindow::SelectResources(QList<Resource *> resources)
@@ -888,53 +903,124 @@ void MainWindow::ShowLastOpenFileWarnings()
 void MainWindow::showEvent(QShowEvent *event)
 {
     m_IsInitialLoad = false;
-    QMainWindow::showEvent(event);
 
-    if (!m_LastOpenFileWarnings.isEmpty()) {
-        QTimer::singleShot(0, this, SLOT(ShowLastOpenFileWarnings()));
+    QMainWindow::showEvent(event);
+}
+
+void MainWindow::DebugCurrentWidgetSizes() 
+{
+    DWINGEO {
+        qDebug() << "visible: " << isVisible();
+        qDebug() << "maximized: " << isMaximized();
+        qDebug() << "full screen: " << isFullScreen();
+
+        QRect r = geometry();
+        qDebug() << "main window: " << r.x() << r.y() << r.width() << r.height();
+
+        r = centralWidget()->geometry();
+        qDebug() << "central widget: " << r.x() << r.y() << r.width() << r.height();
+
+        r = m_TabManager->geometry();
+        qDebug() << "tab manager: " << r.x() << r.y() << r.width() << r.height();
+
+        r = m_FindReplace->geometry();
+        qDebug() << "find replace: " << r.x() << r.y() << r.width() << r.height();
     }
+}
+
+// somehow this routine needs to detect that the mainwindow has
+// been maximized or made fullscreen *before* that WindowState
+// has been set.
+bool MainWindow::isMaxOrFull() {
+    bool result = isMaximized() || isFullScreen();
+#if 0
+    QRect w = geometry();
+    QRect s = qApp->primaryScreen()->availableGeometry();
+    result = result || ((w.height() >= (s.height() - 50)) && (w.width() >= (s.width() - 50)));
+#endif
+    return result; 
 }
 
 void MainWindow::moveEvent(QMoveEvent *event)
 {
-    // Workaround for Qt 4.8 bug - see WriteSettings() for details.
-    if (!isMaximized()) {
-        m_LastWindowSize = saveGeometry();
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "In moveEvent with maximized or full" << isMaxOrFull();
+
+    // Workaround for Qt bug - see WriteSettings() for details.
+    if (!m_PendingLastSizeUpdate && !isMaxOrFull()) {
+        DWINGEO qDebug() << "issuing a LastSizeUpdate request";
+	m_PendingLastSizeUpdate = true;
+        // delay long enough for WindowState to be properly set if Maximized or FullScreened
+	QTimer::singleShot(1000, this, SLOT(UpdateLastSizes()));
     }
+
+    DWINGEO DebugCurrentWidgetSizes();
 
     QMainWindow::moveEvent(event);
 }
 
+// AAARRRRGGGGHHHHHHH!  This is invoked during the resize to fullscreen or maximize 
+// *BEFORE* those WindowStates are actually set!!!!!  The Window size has already been 
+// maximized or fullscreened but isFullScreen() and isMaximized() still returns FALSE.
+// So we can not use it to record last known good sizes of these windows before maximize 
+// or full screen is done by the user.
+// Furthermore this can be invoked more than once for Maximize while it is adjusted in size
+// to fit the available geometry
+
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
-    // Workaround for Qt 4.8 bug - see WriteSettings() for details.
-    if (!isMaximized()) {
-        m_LastWindowSize = saveGeometry();
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "in ResizeEvent with maximized or full" << isMaxOrFull();
+    DWINGEO qDebug() << "old size: " << event->oldSize();
+    DWINGEO qDebug() << "new size: " << event->size();
+    DWINGEO qDebug() << "primary screen total size: " << qApp->primaryScreen()->geometry();
+    DWINGEO qDebug() << "primary screen available size: " << qApp->primaryScreen()->availableGeometry();
+
+    // Workaround for Qt bug - see WriteSettings() for details.
+    if (!m_PendingLastSizeUpdate && !isMaxOrFull()) {
+        DWINGEO qDebug() << "issuing a LastSizeUpdate request";
+        m_PendingLastSizeUpdate = true;
+        // delay long enough for WindowState to be properly set if Maximize or FullScreen
+        QTimer::singleShot(1000, this, SLOT(UpdateLastSizes()));
     }
+
+    DWINGEO DebugCurrentWidgetSizes();
 
     QMainWindow::resizeEvent(event);
 }
 
+
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    DBG qDebug() << "in close event before maybe save";
+    m_IsClosing = true;
+
 
     // stop any further UpdatePreview timer actions
     // and prevent UpdatePage from running
     if (m_PreviewTimer.isActive()) {
         m_PreviewTimer.stop();
     }
-    m_IsClosing = true;
+    disconnect(&m_PreviewTimer, SIGNAL(timeout()), this, SLOT(UpdatePreview()));
+
+    DBG qDebug() << "in close event before maybe save";
 
     // this should be done first to save all geometry
-    // and can not hurt even if close is later ignored
+    // extra saves should not be an issue if the window close is abandoned
     WriteSettings();
-
 
     if (MaybeSaveDialogSaysProceed()) {
 
         DBG qDebug() << "in close event after maybe save";
 
+#ifdef Q_OS_MAC
+        // since we are closing this window, disconnect signals that might be invoked
+        // by a user during closing operations to help prevent segfaults on close
+	disconnect(ui.actionNew,           SIGNAL(triggered()), this, SLOT(NewDefault()));
+	disconnect(ui.actionNewEpub2,      SIGNAL(triggered()), this, SLOT(NewEpub2()));
+	disconnect(ui.actionNewEpub3,      SIGNAL(triggered()), this, SLOT(NewEpub3()));
+	disconnect(ui.actionOpen,          SIGNAL(triggered()), this, SLOT(Open()));
+	disconnect(ui.actionPreferences,   SIGNAL(triggered()), this, SLOT(PreferencesDialog()));
+#endif
         ShowMessageOnStatusBar(tr("Sigil is closing..."));
 
         KeyboardShortcutManager *sm = KeyboardShortcutManager::instance();
@@ -962,15 +1048,28 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	    DBG qDebug() << "in close event hiding Preview Window";
             m_PreviewWindow->hide();
         }
+
+#ifdef Q_OS_MAC
+        // macOSX can not be left in fullscreen mode upon exit
+        if (isFullScreen()) setWindowState(windowState() & ~Qt::WindowFullScreen);
+#endif
         event->accept();
     } else {
         event->ignore();
+	SetupPreviewTimer();
+        // re-enable the ability to record good last normal sizes
+        m_SaveLastEnabled = true;
 	m_IsClosing = false;
     }
 }
 
+// quick and dirty way to map various actions for New()
+// we could move these to exist only in the header
+void MainWindow::NewDefault() { New("");    }
+void MainWindow::NewEpub2()   { New("2.0"); }
+void MainWindow::NewEpub3()   { New("3.0"); }
 
-void MainWindow::New()
+void MainWindow::New(const QString version)
 {
     // The nasty IFDEFs are here to enable the multi-document
     // interface on the Mac; Lin and Win just use multiple
@@ -980,10 +1079,11 @@ void MainWindow::New()
 #endif
     {
 #ifdef Q_OS_MAC
-        MainWindow *new_window = new MainWindow();
+        MainWindow *new_window = new MainWindow("", version);
         new_window->show();
+	new_window->activateWindow();
 #else
-        CreateNewBook();
+        CreateNewBook(version);
 #endif
     }
 
@@ -1007,17 +1107,24 @@ void MainWindow::Open()
             filter_string += filter + ";;";
         }
         QString default_filter = c_LoadFilters.value("epub");
+	QFileDialog::Options options = QFileDialog::Options();
+#ifdef Q_OS_MAC
+	options = options | QFileDialog::DontUseNativeDialog;
+#endif
         QString filename = QFileDialog::getOpenFileName(this,
                            tr("Open File"),
                            m_LastFolderOpen,
                            filter_string,
-                           &default_filter
+			   &default_filter,
+			   options
                                                        );
 
         if (!filename.isEmpty()) {
 #ifdef Q_OS_MAC
             MainWindow *new_window = new MainWindow(filename);
             new_window->show();
+	    new_window->activateWindow();
+	    qApp->processEvents();
 #else
             LoadFile(filename);
 #endif
@@ -1060,6 +1167,9 @@ void MainWindow::OpenRecentFile()
 #ifdef Q_OS_MAC
             MainWindow *new_window = new MainWindow(filename);
             new_window->show();
+	    new_window->activateWindow();
+            qApp->processEvents();
+
 #else
             LoadFile(filename);
 #endif
@@ -1113,17 +1223,18 @@ bool MainWindow::SaveAs()
         save_path       = m_LastFolderOpen + "/" + QFileInfo(m_CurrentFilePath).completeBaseName() + ".epub";
         default_filter  = c_SaveFilters.value("epub");
     }
+    QFileDialog::Options options = QFileDialog::Options();
+#if !defined(Q_OS_WIN32)
+    options = options | QFileDialog::DontUseNativeDialog;
+#endif
+
 
     QString filename = QFileDialog::getSaveFileName(this,
                        tr("Save File"),
                        save_path,
                        filter_string,
-#if !defined(Q_OS_WIN32) && !defined(Q_OS_MAC)
-                       & default_filter,
-                       QFileDialog::DontUseNativeDialog
-#else
-                       & default_filter
-#endif
+                       &default_filter,
+                       options
                                                    );
 
     // QFileDialog cancelled
@@ -1168,16 +1279,16 @@ bool MainWindow::SaveACopy()
     filters.removeDuplicates();
     QString filter_string = "*.epub";
     QString default_filter  = "*.epub";
+    QFileDialog::Options options = QFileDialog::Options();
+#if !defined(Q_OS_WIN32)
+    options = options | QFileDialog::DontUseNativeDialog;
+#endif
     QString filename = QFileDialog::getSaveFileName(this,
                        tr("Save a Copy"),
                        m_SaveACopyFilename,
                        filter_string,
-#if !defined(Q_OS_WIN32) && !defined(Q_OS_MAC)
-                       & default_filter,
-                       QFileDialog::DontUseNativeDialog
-#else
-                       & default_filter
-#endif
+		       &default_filter,
+                       options
                                                    );
 
     // QFileDialog cancelled
@@ -1217,7 +1328,7 @@ void MainWindow::CreateEpubLayout()
     }
  
     if (MaybeSaveDialogSaysProceed()) {
-        CreateNewBook(bookpaths);
+        CreateNewBook(version, bookpaths);
     }
     ShowMessageOnStatusBar(tr("New epub created."));
 }
@@ -1487,6 +1598,13 @@ void MainWindow::AddCover()
         }
     }
 
+    if (html_cover_resource != NULL) {
+        QString msg = tr("An existing Cover file has been found.");
+	if (!ProceedToOverwrite(msg, html_cover_resource->ShortPathName())) {
+	    html_cover_resource = NULL;
+	}
+    }
+
     // Populate the HTML cover file with the necessary text.
     // If a template file exists, use its text for the cover source.
     QString text = HTML_COVER_SOURCE;
@@ -1633,6 +1751,18 @@ void MainWindow::GenerateNCXGuideFromNav()
         QApplication::restoreOverrideCursor();
     }
 
+    NCXResource * ncx_resource = m_Book->GetNCX();
+    // generate a new empty NCX if one does not exist in this epub3
+    if (!ncx_resource) {
+        ncx_resource = m_Book->GetFolderKeeper()->AddNCXToFolder(version);
+	// We manually created an NCX file because there wasn't one in the manifest.
+        // Need to create a new manifest id for it.
+        // and take that manifest id and add it to the spine attribute
+        QString NCXId = m_Book->GetOPF()->AddNCXItem(ncx_resource->GetFullPath(),"ncx");
+	m_Book->GetOPF()->UpdateNCXOnSpine(NCXId);
+    }
+
+    QString ncxdir = Utility::startingDir(ncx_resource->GetRelativePath());
 
     QList<QVariant> mvalues = m_Book->GetConstOPF()->GetDCMetadataValues("dc:title");
     QString doctitle = "UNKNOWN";
@@ -1640,11 +1770,6 @@ void MainWindow::GenerateNCXGuideFromNav()
         doctitle = mvalues.at(0).toString();
     } 
     QString mainid = m_Book->GetConstOPF()->GetMainIdentifierValue();
-
-    // figure out book path to the folder that *will* contain the ncx
-    QString mainfolder = m_Book->GetFolderKeeper()->GetFullPathToMainFolder();
-    QString ncxdir = m_Book->GetFolderKeeper()->GetDefaultFolderForGroup("ncx");
-    ncxdir = ncxdir.right(ncxdir.length() - mainfolder.length() - 1);
 
     // Now build the ncx in python in a separate thread since may be an long job
     PythonRoutines pr;
@@ -1659,21 +1784,10 @@ void MainWindow::GenerateNCXGuideFromNav()
         return;
     }
 
-    NCXResource * ncx_resource = m_Book->GetNCX();
-    // generate a new empty NCX if one does not exist in this epub3
-    if (!ncx_resource) {
-        ncx_resource = m_Book->GetFolderKeeper()->AddNCXToFolder(version);
-	// We manually created an NCX file because there wasn't one in the manifest.
-        // Need to create a new manifest id for it.
-        // and take that manifest id and add it to the spine attribute
-        QString NCXId = m_Book->GetOPF()->AddNCXItem(ncx_resource->GetFullPath(),"ncx");
-	m_Book->GetOPF()->UpdateNCXOnSpine(NCXId);
-    }
     ncx_resource->SetText(ncxdata);
     ncx_resource->SaveToDisk();
 
     // now create the opf guide from the nav
-
     // start by clearing whatever old info is in the guide now
     m_Book->GetOPF()->ClearSemanticCodesInGuide();
 
@@ -1713,23 +1827,31 @@ void MainWindow::CreateIndex()
     SaveTabData();
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
-    // If Index CSS file does not exist create one.
+    // First handle the css file for the index
     bool found_css = false;
-    foreach(Resource *resource, m_BookBrowser->AllCSSResources()) {
+    Resource * styleresource = NULL;
+
+    QList<Resource*> style_resources = m_Book->GetFolderKeeper()->GetResourceTypeAsGenericList<CSSResource>(false);
+    foreach(Resource *resource, style_resources) {
         if (resource->Filename() == SGC_INDEX_CSS_FILENAME) {
+            styleresource = resource;
             found_css = true;
+            break;
         }
     }
-
-    // If Index CSS file does not exist look for a default file
+    // If CSS file does not exist look for a default file
     // in preferences directory and if none create one.
     if (!found_css) {
         QString css_path = Utility::DefinePrefsDir() + "/" + SGC_INDEX_CSS_FILENAME;
-        if (QFile::exists(css_path)) {
-            m_BookBrowser->AddFile(css_path);
+        if (!QFile::exists(css_path)) {
+            styleresource = m_BookBrowser->CreateIndexCSSFile();
         } else {
-            m_BookBrowser->CreateIndexCSSFile();
-        }
+            styleresource = m_Book->GetFolderKeeper()->AddContentFileToFolder(css_path, true, "text/css");
+	}
+        CSSResource *css_resource = qobject_cast<CSSResource *> (styleresource);
+        // Need to make sure InitialLoad is done in newly added css resource object to prevent
+        // blank css issues after a save to disk
+        if (css_resource) css_resource->InitialLoad();
     }
 
     // get semantic (guide/landmark) information for all resources
@@ -1750,6 +1872,7 @@ void MainWindow::CreateIndex()
                     "text" << "volume"; 
 
     HTMLResource *index_resource = NULL;
+
     QList<HTMLResource *> html_resources;
 
     // Turn the list of Resources that are really HTMLResources to a real list
@@ -1777,6 +1900,13 @@ void MainWindow::CreateIndex()
         }
     }
 
+    if (index_resource != NULL) {
+        QString msg = tr("An existing Index file has been found.");
+        if (!ProceedToOverwrite(msg, index_resource->ShortPathName())) {
+            index_resource = NULL;
+        }
+    }
+
     // Close the tab so the focus saving doesn't overwrite the text were
     // replacing in the resource.
     if (index_resource != NULL) {
@@ -1787,8 +1917,6 @@ void MainWindow::CreateIndex()
     if (index_resource == NULL) {
         index_resource = m_Book->CreateEmptyHTMLFile();
         index_resource->RenameTo(HTML_INDEX_FILE);
-        // html_resources.append(index_resource);
-        // OPF Already Updated // m_Book->GetOPF()->UpdateSpineOrder(html_resources);
     }
 
     // Make sure you not indexing the index page itself
@@ -1805,8 +1933,12 @@ void MainWindow::CreateIndex()
         return;
     }
 
+    // Collect the information to fill int the appropriate templates
+    QString indexbookpath = index_resource->GetRelativePath();
+    QString stylebookpath = styleresource->GetRelativePath();
+
     // Write out the HTML index file.
-    IndexHTMLWriter index;
+    IndexHTMLWriter index(indexbookpath, stylebookpath);
     index_resource->SetText(index.WriteXML(version));
 
     // Normally Setting a semantic on a resource that already has it set will remove the semantic.
@@ -1868,8 +2000,12 @@ void MainWindow::DeleteReportsStyles(QList<BookReports::StyleData *> reports_sty
 
 void MainWindow::ReportsDialog()
 {
-    SaveTabData();
+    ShowMessageOnStatusBar(tr("Reports Being Generated."));
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
     // since we do report file sizes, we have to flush all changes to disk
+    SaveTabData();
     m_Book->GetFolderKeeper()->SuspendWatchingResources();
     m_Book->SaveAllResourcesToDisk();
     m_Book->GetFolderKeeper()->ResumeWatchingResources();
@@ -1878,8 +2014,13 @@ void MainWindow::ReportsDialog()
         QMessageBox::warning(this, tr("Sigil"), tr("Reports cancelled due to XML not well formed."));
         return;
     }
-    // non-modal dialog
+
+    qDebug() << "Creating All of the Reports";
     m_Reports->CreateReports(m_Book);
+    
+    QApplication::restoreOverrideCursor();
+
+    // non-modal dialog
     m_Reports->show();
     m_Reports->raise();
     m_Reports->activateWindow();
@@ -2221,7 +2362,7 @@ void MainWindow::InsertHyperlink()
 
     HTMLResource *html_resource = qobject_cast<HTMLResource *>(flow_tab->GetLoadedResource());
     QList<Resource *> resources = GetAllHTMLResources() + m_BookBrowser->AllMediaResources();
-    SelectHyperlink select_hyperlink(href, html_resource, resources, m_Book, this);
+    SelectHyperlink select_hyperlink(href, html_resource, "html", resources, m_Book, this);
 
     if (select_hyperlink.exec() == QDialog::Accepted) {
         QString target = select_hyperlink.GetTarget();
@@ -2303,8 +2444,13 @@ void MainWindow::QuickLaunchPlugin(int i)
     if ((i >= 0) && (namemap.count() > i)) {
         QString pname = namemap.at(i);
         if (m_pluginList.contains(pname)) {
-            PluginRunner prunner(m_TabManager, this);
-            prunner.exec(pname);
+	    // QApplication keeps a single modalWindowList across multiple main
+	    // windows and this list is not updated until modal dialog is deleted
+            { 
+                PluginRunner prunner(m_TabManager, this);
+                prunner.exec(pname);
+	    }
+            qApp->processEvents();
         }
     }
 }
@@ -2871,8 +3017,7 @@ void MainWindow::CreateHTMLTOC()
     HTMLResource *navResource = m_Book->GetOPF()->GetNavResource();
     QList<HTMLResource *> htmlResources;
 
-    // Turn the list of Resources that are really HTMLResources to a real list
-    // of HTMLResources.
+    // list is built in spine order by the BookBrowser
     QList<Resource *> resources = GetAllHTMLResources();
 
     foreach(Resource * resource, resources) {
@@ -2884,25 +3029,37 @@ void MainWindow::CreateHTMLTOC()
             // prevent the nav resource from being chosen or used for an html toc
             if (htmlResource != navResource) {
 
-                // if epub2, check if this is an existing toc file
-		if (!version.startsWith('3')) {
-                    if (m_Book->GetOPF()->GetGuideSemanticCodeForResource(htmlResource) == "toc") {
-                        tocResource = htmlResource;
-		    }
+		// Check if this is an existing HTML toc file.
+		QString semantic_code;
+		if (version.startsWith('3')) {
+		    NavProcessor navproc(navResource);
+		    semantic_code = navproc.GetLandmarkCodeForResource(htmlResource);
+		} else {
+		    semantic_code = m_Book->GetOPF()->GetGuideSemanticCodeForResource(htmlResource);
 		}
-
-                // alternatively check if it matches our standard HTML_TOC filename
-                if (resource->Filename() == HTML_TOC_FILE && tocResource == NULL) {
-                    tocResource = htmlResource;
-                }
+		if (semantic_code == "toc") {
+		    tocResource = htmlResource;
+		} else if (resource->Filename() == HTML_TOC_FILE && tocResource == NULL) {
+		    tocResource = htmlResource;
+		}
             }
         }
     }
+ 
+    if (tocResource != NULL) {
+
+        QString msg = tr("An existing HTML Table of Contents file has been found.");
+        if (!ProceedToOverwrite(msg, tocResource->ShortPathName())) {
+            tocResource = NULL;
+	}
+    }
+
     // If you found an existing one, close the tab so the focus 
     // saving doesn't overwrite the text we are replacing in the resource.
     if (tocResource != NULL) {
         m_TabManager->CloseTabForResource(tocResource);
     }
+
     // Create the an HTMLResource for the TOC if it doesn't exit.
     if (tocResource == NULL) {
         tocResource = m_Book->CreateEmptyHTMLFile();
@@ -2915,10 +3072,15 @@ void MainWindow::CreateHTMLTOC()
 		      m_TableOfContents->GetRootEntry());
     tocResource->SetText(toc.WriteXML(version));
 
+    // For epub3 now allow multiple landmarks with the toc semantic set, this is legal as long
+    // as only the toc nav exists uniquely
+
     // Setting a semantic on a resource that already has it set will remove the semantic.
     // Unless you pass toggle as false as the final parameter
-    // In epub3 only the nav should be marked as the toc so do not set this landmark in the nav
-    if (!version.startsWith('3')) {
+    if (version.startsWith('3')) {
+	NavProcessor navproc(navResource);
+	navproc.AddLandmarkCode(tocResource, "toc", false);
+    } else {
         m_Book->GetOPF()->AddGuideSemanticCode(tocResource, "toc", false);
     }
     m_Book->SetModified();
@@ -3078,21 +3240,26 @@ void MainWindow::AboutDialog()
 
 void MainWindow::PreferencesDialog()
 {
-    Preferences preferences(this);
-    preferences.exec();
+    if (m_IsClosing) return;
 
-    if (preferences.isReloadTabsRequired()) {
+    // QApplication keeps a single modalWindowList across multiple main
+    // windows and this list is not updated until modal dialog is deleted
+  
+    Preferences prefers(this);
+    prefers.exec();
+
+    if (prefers.isReloadTabsRequired()) {
         m_TabManager->ReopenTabs();
         m_BookBrowser->Refresh();
-    } else if (preferences.isRefreshBookBrowserRequired()) {
+    } else if (prefers.isRefreshBookBrowserRequired()) {
         m_BookBrowser->Refresh();
-    } else if (preferences.isRefreshSpellingHighlightingRequired()) {
+    } else if (prefers.isRefreshSpellingHighlightingRequired()) {
         RefreshSpellingHighlighting();
         // Make sure menu state is set
         SettingsStore settings;
         ui.actionAutoSpellCheck->setChecked(settings.spellCheck());
     }
-    if (preferences.isRefreshClipHistoryLimitRequired()) {
+    if (prefers.isRefreshClipHistoryLimitRequired()) {
         SettingsStore settings;
         m_ClipboardHistoryLimit = settings.clipboardHistoryLimit();
     }
@@ -3108,23 +3275,25 @@ void MainWindow::PreferencesDialog()
 
 void MainWindow::ManagePluginsDialog()
 {
-    Preferences preferences(this);
-    preferences.makeActive(Preferences::PluginsPrefs);
-    preferences.exec();
+    if (m_IsClosing) return;
+
+    Preferences prefers(this);
+    prefers.makeActive(Preferences::PluginsPrefs);
+    prefers.exec();
 
     // other preferences may have been changed as well
-    if (preferences.isReloadTabsRequired()) {
+    if (prefers.isReloadTabsRequired()) {
         m_TabManager->ReopenTabs();
 	m_BookBrowser->Refresh();
-    } else if (preferences.isRefreshBookBrowserRequired()) {
+    } else if (prefers.isRefreshBookBrowserRequired()) {
         m_BookBrowser->Refresh();
-    } else if (preferences.isRefreshSpellingHighlightingRequired()) {
+    } else if (prefers.isRefreshSpellingHighlightingRequired()) {
         RefreshSpellingHighlighting();
         // Make sure menu state is set
         SettingsStore settings;
         ui.actionAutoSpellCheck->setChecked(settings.spellCheck());
     }
-    if (preferences.isRefreshClipHistoryLimitRequired()) {
+    if (prefers.isRefreshClipHistoryLimitRequired()) {
         SettingsStore settings;
         m_ClipboardHistoryLimit = settings.clipboardHistoryLimit();
     }
@@ -3200,7 +3369,7 @@ void MainWindow::UpdateMWState(bool set_tab_state)
 
     if (type == Resource::HTMLResourceType) {
         if (set_tab_state) {
-            FlowTab *ftab = dynamic_cast<FlowTab *>(tab);
+            FlowTab *ftab = qobject_cast<FlowTab *>(tab);
 
             if (ftab) {
                 ftab->ReloadTabIfPending();
@@ -3845,6 +4014,8 @@ void MainWindow::UpdateBrowserSelectionToTab()
 
 void MainWindow::ReadSettings()
 {
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "In ReadSettings";
     SettingsStore settings;
     ui.actionAutoSpellCheck->setChecked(settings.spellCheck());
     emit SettingsChanged();
@@ -3852,23 +4023,39 @@ void MainWindow::ReadSettings()
     // The size of the window and its full screen status
     // Due to the 4.8 bug, we restore its "normal" window size and then maximize
     // it afterwards (if last state was maximized) to ensure on correct screen.
-    bool isMaximized = settings.value("maximized", false).toBool();
-    m_LastWindowSize = settings.value("geometry").toByteArray();
+    bool MaximizedState = settings.value("maximized", false).toBool();
+    bool FullScreenState = settings.value("fullscreen", false).toBool();
 
-    if (!m_LastWindowSize.isNull()) {
-        restoreGeometry(m_LastWindowSize);
+    m_LastWindowSize = settings.value("geometry",QByteArray()).toByteArray();
 
-        if (isMaximized) {
-            setWindowState(windowState() | Qt::WindowMaximized);
-        }
+    // we should probably not restore geometry of a maximized window here
+    // since it would restore the normal geometry
+
+    if (!MaximizedState && !FullScreenState) {
+        if (!m_LastWindowSize.isEmpty()) restoreGeometry(m_LastWindowSize);
+    } 
+
+    if (MaximizedState) {
+        QRect maxsize = settings.value("max_mw_geometry", QApplication::desktop()->availableGeometry(this)).toRect();
+        setGeometry(maxsize);
+        setWindowState(windowState() | Qt::WindowMaximized);
+    } else if (FullScreenState) {
+        QRect maxsize = settings.value("max_mw_geometry", QApplication::desktop()->screenGeometry(this)).toRect();
+        setGeometry(maxsize);
+        setWindowState(windowState() | Qt::WindowFullScreen);
     }
+
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "In ReadSettings before restoreState";
+
+    DWINGEO DebugCurrentWidgetSizes();
 
     // The positions of all the toolbars and dock widgets
-    QByteArray toolbars = settings.value("toolbars").toByteArray();
-
-    if (!toolbars.isNull()) {
-        restoreState(toolbars);
-    }
+    // The dockwidgets  will only "restore" properly if the widget already
+    // has the proper geometry to match what was saved and has been
+    // properly resized (see QTBUG-46620 and QTBUG-16252)
+    // So delay restore until the first time the widget is made active
+    m_LastState = settings.value("toolbars",QByteArray()).toByteArray();
 
     // The last folder used for saving and opening files
     m_LastFolderOpen  = settings.value("lastfolderopen", QDir::homePath()).toString();
@@ -3962,7 +4149,12 @@ void MainWindow::ReadSettings()
 
 void MainWindow::WriteSettings()
 {
-    DBG qDebug() << "In WriteSettings";
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "In WriteSettings";
+
+    // disable recording any last sizes as exiting
+    m_SaveLastEnabled = false;
+
     SettingsStore settings;
     settings.beginGroup(SETTINGS_GROUP);
     // The size of the window and it's full screen status
@@ -3971,21 +4163,25 @@ void MainWindow::WriteSettings()
     // and open it maximized on the wrong screen.
     // https://bugreports.qt-project.org/browse/QTBUG-21371
     settings.setValue("maximized", isMaximized());
-    DBG qDebug() << "In WriteSettings with maximized " << isMaximized();
-    DBG qDebug() << "In WriteSettings with LastWindowSize " << m_LastWindowSize;
+    settings.setValue("fullscreen",isFullScreen());
 
-    if (!m_LastWindowSize.isEmpty()) {
-        settings.setValue("geometry", m_LastWindowSize);
+    DBG DebugCurrentWidgetSizes();
+
+    // if currently not maximized and not full screen, just save what we have now
+    if (!isMaximized() && !isFullScreen()) {
+        settings.setValue("geometry", saveGeometry());
     } else {
-        // handle the case where we have not moved or resized anything
-        // but we are not maximized
-        if (!isMaximized()) {
-	    DBG qDebug() << "In WriteSettings but it had no LastWindowSize ";
-            settings.setValue("geometry", saveGeometry());
-	}
+        settings.setValue("geometry", m_LastWindowSize);
     }
+
+    // in case this is needed for helping to determine when last normal sizes
+    if (isMaximized() || isFullScreen() ) {
+        settings.setValue("max_mw_geometry", geometry());
+    }
+
     // The positions of all the toolbars and dock widgets
     settings.setValue("toolbars", saveState());
+
     // The last folders used for saving and opening files
     settings.setValue("lastfolderopen",  m_LastFolderOpen);
     // The list of recent files
@@ -3999,14 +4195,11 @@ void MainWindow::WriteSettings()
 
 bool MainWindow::MaybeSaveDialogSaysProceed()
 {
-
-#ifndef Q_OS_MAC
     // Make sure that any tabs currently about to be drawn etc get a chance to do so.
     // or else the process of closing/creating a new book will crash with Qt object errors.
     // Particularly a problem if open a large tab in Preview prior to the action
-    // due to QWebInspector
+    // due to QWebInspector, QTimer timeouts etc
     qApp->processEvents();
-#endif 
 
     if (isWindowModified()) {
         QMessageBox::StandardButton button_pressed;
@@ -4026,6 +4219,18 @@ bool MainWindow::MaybeSaveDialogSaysProceed()
     return true;
 }
 
+
+bool MainWindow::ProceedToOverwrite(const QString& msg, const QString &filename)
+{
+    QMessageBox::StandardButton button_pressed;
+    button_pressed = QMessageBox::warning(this,
+					  tr("Sigil"),
+				          msg + " " +  
+				          tr("Should Sigil overwrite this file?") + " " + filename,
+					  QMessageBox::Yes | QMessageBox::No);
+    if (button_pressed == QMessageBox::Yes) return true;
+    return false;
+}
 
 void MainWindow::SetNewBook(QSharedPointer<Book> new_book)
 {
@@ -4065,12 +4270,12 @@ void MainWindow::ResourcesAddedOrDeletedOrMoved()
 }
 
 
-void MainWindow::CreateNewBook(const QStringList &book_paths)
+void MainWindow::CreateNewBook(const QString version, const QStringList &book_paths)
 {
-    QString version;
-    {
+    QString epubversion = version;
+    if (epubversion.isEmpty()) {
         SettingsStore ss;
-        version = ss.defaultVersion();
+        epubversion = ss.defaultVersion();
     }
 
     QStringList bookpaths(book_paths);
@@ -4105,7 +4310,7 @@ void MainWindow::CreateNewBook(const QStringList &book_paths)
             if (bkpath.endsWith("marker.xhtml")) hasTEXT = true;
 	    if (bkpath.endsWith(".xhtml") && !bkpath.endsWith("marker.xhtml")) hasNAV = true;
         }
-        if (version.startsWith('3')) {
+        if (epubversion.startsWith('3')) {
             is_valid = hasOPF && hasNAV && hasTEXT && hasSTYLE;
         } else {
             is_valid = hasOPF && hasNCX && hasTEXT;
@@ -4117,10 +4322,8 @@ void MainWindow::CreateNewBook(const QStringList &book_paths)
         bookpaths.clear();
         bookpaths << "OEBPS/content.opf"      << "OEBPS/Text/marker.xhtml" << "OEBPS/Styles/marker.css"
                   << "OEBPS/Fonts/marker.otf" << "OEBPS/Images/marker.jpg" << "OEBPS/Audio/marker.mp3"
-                  << "OEBPS/Video/marker.mp4" << "OEBPS/Misc/marker.xml";
-	if (version.startsWith('2')) {
-	    bookpaths << "OEBPS/toc.ncx";
-	} else {
+                  << "OEBPS/Video/marker.mp4" << "OEBPS/Misc/marker.xml" << "OEBPS/toc.ncx";
+	if (epubversion.startsWith('3')) {
             bookpaths << "OEBPS/Text/nav.xhtml" << "OEBPS/Misc/marker.js";
 	}
     }
@@ -4132,45 +4335,49 @@ void MainWindow::CreateNewBook(const QStringList &book_paths)
     QString navdir;
     QStringList textdirs;
     QStringList mtypes;
+    QStringList finalpaths;
     foreach(QString bkpath, bookpaths) {
         QString filename = bkpath.split("/").last();
         QString extension = filename.split(".").last();
         QString folder = Utility::startingDir(bkpath);
         QString mt = MediaTypes::instance()->GetMediaTypeFromExtension(extension);
-        mtypes << mt;
         if (filename.endsWith(".opf")) opfbookpath = bkpath;
         if (filename.endsWith(".ncx")) ncxbookpath = bkpath;
         if (filename.endsWith("marker.xhtml")) textdirs << folder;
 	if (filename.endsWith(".xhtml") && !filename.endsWith("marker.xhtml")) {
 	    navdir = folder;
 	    navfile = filename;
-        }
+            continue;
+	}
+        mtypes << mt;
+        finalpaths << bkpath;
     }
+    QString first_textdir = textdirs.first();
 
     QSharedPointer<Book> new_book = QSharedPointer<Book>(new Book());
     // immediately after creating a new book, you must
     // add a proper OPF to it *before* doing anything else
-    new_book->GetFolderKeeper()->AddOPFToFolder(version, opfbookpath);
+    new_book->GetFolderKeeper()->AddOPFToFolder(epubversion, opfbookpath);
 
     // Set Group Folders from bookpaths
-    new_book->GetFolderKeeper()->SetGroupFolders(bookpaths, mtypes);
+    new_book->GetFolderKeeper()->SetGroupFolders(finalpaths, mtypes);
 
     // create a single text file in each location
     foreach(QString textfolder, textdirs) {
-      new_book->CreateEmptyHTMLFile(textfolder);
+        new_book->CreateEmptyHTMLFile(textfolder);
     }
 
     // handle nav / ncx
-    if (version.startsWith('3')) {
-        HTMLResource * nav_resource = new_book->CreateEmptyNavFile(true, navdir, navfile);
+    if (epubversion.startsWith('3')) {
+        HTMLResource * nav_resource = new_book->CreateEmptyNavFile(true, navdir, navfile, first_textdir);
         new_book->GetOPF()->SetNavResource(nav_resource);
         new_book->GetOPF()->SetItemRefLinear(nav_resource, false);
-        // ncx is optional in epub3
-        if (!ncxbookpath.isEmpty()) {
-	    new_book->GetFolderKeeper()->AddNCXToFolder(version, ncxbookpath);
-        }
+        // ncx is optional in epub3 so wait until user asks for it to be generated before creating it
+        // if (!ncxbookpath.isEmpty()) {
+        //     new_book->GetFolderKeeper()->AddNCXToFolder(version, ncxbookpath, first_textdir);
+	// }
     } else {
-        new_book->GetFolderKeeper()->AddNCXToFolder(version, ncxbookpath);
+        new_book->GetFolderKeeper()->AddNCXToFolder(epubversion, ncxbookpath, first_textdir);
     }
     SetNewBook(new_book);
     new_book->SetModified(false);
@@ -4281,7 +4488,6 @@ void MainWindow::SetValidationResults(const QList<ValidationResult> &results)
 bool MainWindow::SaveFile(const QString &fullfilepath, bool update_current_filename)
 {
     SettingsStore ss;
-    bool not_well_formed = false;
 
     try {
         ShowMessageOnStatusBar(tr("Saving EPUB..."), 0);
@@ -4302,14 +4508,14 @@ bool MainWindow::SaveFile(const QString &fullfilepath, bool update_current_filen
 
         QApplication::setOverrideCursor(Qt::WaitCursor);
 
-        QList <HTMLResource *> resources;
+        QList <HTMLResource *> broken_resources;
+        bool not_well_formed = false;
         Q_FOREACH(Resource * r, GetAllHTMLResources()) {
-            HTMLResource *t = dynamic_cast<HTMLResource *>(r);
+            HTMLResource *t = qobject_cast<HTMLResource *>(r);
             if (t) {
-                resources.append(t);
                 if (!XhtmlDoc::IsDataWellFormed(t->GetText())) {
                     not_well_formed = true;
-                    break;
+                    broken_resources.append(t);
                 }
             }
         }
@@ -4321,18 +4527,25 @@ bool MainWindow::SaveFile(const QString &fullfilepath, bool update_current_filen
                                 tr("This EPUB has HTML files that are not well formed and "
                                    "your current Clean Source preferences are set to automatically mend on Save. "
                                    "Saving a file that is not well formed will cause it to be automatically "
-                                   "fixed, which very rarely may result in data loss.\n\n"
+                                   "fixed, which very rarely may result in some data loss.\n\n"
                                    "Do you want to automatically mend the files before saving?"),
                                 QMessageBox::Yes|QMessageBox::No);
                 QApplication::setOverrideCursor(Qt::WaitCursor);
                 if (auto_fix) {
-                    CleanSource::ReformatAll(resources, CleanSource::Mend);
+                    CleanSource::ReformatAll(broken_resources, CleanSource::Mend);
                     not_well_formed = false;
                 }
-            } else {
-                CleanSource::ReformatAll(resources, CleanSource::Mend);
             }
         }
+#if 0 
+	else {
+            if (not_well_formed) {
+                // they have broken xhtml resources but do NOT have clean 
+                // on save set. Should we be doing anything here?  
+                // We do warn them at the end.
+	    }
+	}
+#endif
 
         ExporterFactory().GetExporter(fullfilepath, m_Book)->WriteBook();
 
@@ -4662,8 +4875,9 @@ void MainWindow::PlatformSpecificTweaks()
     //    toolbar->setIconSize(QSize(32, 32));
     //}
     // Set the action because they are not automatically put in the right place as of Qt 5.1.
-    ui.actionAbout->setMenuRole(QAction::AboutRole);
-    ui.actionPreferences->setMenuRole(QAction::PreferencesRole);
+    // These can now be specified in the main.ui file
+    // ui.actionAbout->setMenuRole(QAction::AboutRole);
+    // ui.actionPreferences->setMenuRole(QAction::PreferencesRole);
 #endif
     sizeMenuIcons();
 }
@@ -4688,6 +4902,8 @@ void MainWindow::ExtendUI()
     QFrame *frame = new QFrame(this);
     QLayout *layout = new QVBoxLayout(frame);
     frame->setLayout(layout);
+    m_TabManager->setObjectName(TAB_MANAGER_NAME);
+    m_FindReplace->setObjectName("FIND_REPLACE_NAME");
     layout->addWidget(m_TabManager);
     layout->addWidget(m_FindReplace);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -4786,7 +5002,9 @@ void MainWindow::ExtendUI()
     KeyboardShortcutManager *sm = KeyboardShortcutManager::instance();
     // Note: shortcut action Ids should not be translated.
     // File
-    sm->registerAction(this, ui.actionNew, "MainWindow.New");
+    sm->registerAction(this, ui.actionNew, "MainWindow.NewDefault");
+    sm->registerAction(this, ui.actionNewEpub2, "MainWindow.NewEpub2");
+    sm->registerAction(this, ui.actionNewEpub3, "MainWindow.NewEpub3");
     sm->registerAction(this, ui.actionNewHTMLFile, "MainWindow.NewHTMLFile");
     sm->registerAction(this, ui.actionNewCSSFile, "MainWindow.NewCSSFile");
     sm->registerAction(this, ui.actionNewSVGFile, "MainWindow.NewSVGFile");
@@ -4963,11 +5181,13 @@ void MainWindow::ExtendUI()
     // Change Case QToolButton
     ui.tbCase->setPopupMode(QToolButton::InstantPopup);
 
+#if 0
     // stop gap until an icon can be made
     ui.tbCase->setToolButtonStyle(Qt::ToolButtonTextOnly);
     QFont font = ui.tbCase->font();
     font.setPointSize(18);
     ui.tbCase->setFont(font);
+#endif
 
     ExtendIconSizes();
     UpdateClipsUI();
@@ -5025,6 +5245,16 @@ void MainWindow::ExtendIconSizes()
     icon.addFile(QString::fromUtf8(":/main/document-new_16px.png"));
     icon.addFile(QString::fromUtf8(":/main/document-new_22px.png"));
     ui.actionNew->setIcon(icon);
+
+    icon = ui.actionNewEpub2->icon();
+    icon.addFile(QString::fromUtf8(":/main/document-new-epub2_16px.png"));
+    icon.addFile(QString::fromUtf8(":/main/document-new-epub2_22px.png"));
+    ui.actionNewEpub2->setIcon(icon);
+
+    icon = ui.actionNewEpub3->icon();
+    icon.addFile(QString::fromUtf8(":/main/document-new-epub3_16px.png"));
+    icon.addFile(QString::fromUtf8(":/main/document-new-epub3_22px.png"));
+    ui.actionNewEpub3->setIcon(icon);
 
     icon = ui.actionAddExistingFile->icon();
     icon.addFile(QString::fromUtf8(":/main/document-add_16px.png"));
@@ -5161,6 +5391,11 @@ void MainWindow::ExtendIconSizes()
     icon.addFile(QString::fromUtf8(":/main/format-case-capitalize_22px.png"));
     ui.actionCasingCapitalize->setIcon(icon);
 
+    icon = ui.tbCase->icon();
+    icon.addFile(QString::fromUtf8(":/main/case-change_16px.png"));
+    icon.addFile(QString::fromUtf8(":/main/case-change_22px.png"));
+    ui.tbCase->setIcon(icon);
+
     icon = ui.actionTextDirectionLTR->icon();
     icon.addFile(QString::fromUtf8(":/main/format-direction-ltr_16px.png"));
     icon.addFile(QString::fromUtf8(":/main/format-direction-ltr_22px.png"));
@@ -5288,35 +5523,108 @@ void MainWindow::ExtendIconSizes()
 }
 
 
-void MainWindow::LoadInitialFile(const QString &openfilepath, bool is_internal)
+void MainWindow::LoadInitialFile(const QString &openfilepath, const QString version, bool is_internal)
 {
     if (!openfilepath.isEmpty()) {
         LoadFile(QFileInfo(openfilepath).absoluteFilePath(), is_internal);
     } else {
-        CreateNewBook();
+        CreateNewBook(version);
     }
+}
+
+// Workaround for Long term Qt restore geometry bug - see WriteSettings() for details.
+void MainWindow::UpdateLastSizes() {
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "In UpdateLastSizes";
+    DWINGEO qDebug() << "Pending: " << m_PendingLastSizeUpdate;
+    DWINGEO qDebug() << "Enabled: " << m_SaveLastEnabled;
+
+    if (!m_PendingLastSizeUpdate) return;
+
+    if (m_SaveLastEnabled) {
+        if (!isMaxOrFull()) {
+            DWINGEO qDebug() << "recording last sizes";
+            m_LastWindowSize = saveGeometry();
+        }
+    }
+
+    DWINGEO DebugCurrentWidgetSizes();
+
+    m_PendingLastSizeUpdate = false;
+
+}
+
+// This may still be needed on Windows and Linux
+// so keep the code
+void MainWindow::RestoreLastNormalGeometry()
+{
+#if 1 //def Q_OS_WIN32
+    // record the current sizes before changing then as they
+    // are updated in the resize event
+    QByteArray WindowSize = m_LastWindowSize;
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "In RestoreLastNormalGeometry";
+
+    // prevent any resulting move or resize from being recorded here
+    m_SaveLastEnabled = false;
+    if (!WindowSize.isEmpty()) restoreGeometry(WindowSize);
+    m_SaveLastEnabled=true;
+
+    DWINGEO DebugCurrentWidgetSizes();
+#endif
 }
 
 void MainWindow::changeEvent(QEvent *e) 
 {
-    DBG qDebug() << "changeEvent: " << e;
+    DWINGEO qDebug() << "------";
+    DWINGEO qDebug() << "In ChangeEvent: " << e;
     if(e->type() == QEvent::WindowStateChange) {
+	const QWindowStateChangeEvent* wsevent = static_cast<QWindowStateChangeEvent*>(e);
+        DWINGEO qDebug() << "old state" << wsevent->oldState();
+
+        DWINGEO DebugCurrentWidgetSizes();
+
         if(isMinimized()) {
             // MINIMIZED
-	    DBG qDebug() << "Main Window was minimized";
-	    m_PreviewTimer.stop();
+	    DWINGEO qDebug() << "Main Window new state: minimized";
         } else if (isMaximized()) {
-	    DBG qDebug() << "Main Window was maximized";
+	    DWINGEO qDebug() << "Main Window new state: maximized";
+        } else if (isFullScreen()) {
+	    DWINGEO qDebug() << "Main Window new state: fullscreen";
 	} else {
-            // NORMAL/MAXIMIZED ETC
-	    DBG qDebug() << "Main Window was restored";
+            // NORMAL
+	    DWINGEO qDebug() << "Main Window new state: normal";
+#if 1  //def Q_OS_WIN32
+            // This is still be needed for Windows and Linux to restore after maximize
+	    QTimer::singleShot(0, this, SLOT(RestoreLastNormalGeometry()));
+#endif
         }
     }
-    if(e->type() == QEvent::ActivationChange) {
+    if (e->type() == QEvent::ActivationChange) {
         if(isActiveWindow()) {
-	    DBG qDebug() << "Main Window is now Active";
+            DWINGEO qDebug() << "------";
+	    DWINGEO qDebug() << "Main Window is transitioning from inactive to active: " << isMaxOrFull();
+
+            if (m_FirstTime) {
+                if (!m_LastState.isEmpty()) {
+                    restoreState(m_LastState);
+		}
+	    }
+            m_FirstTime = false;
+
+            // moved here from showEvent to make sure it comes after state restoration
+            if (!m_LastOpenFileWarnings.isEmpty()) {
+                QTimer::singleShot(0, this, SLOT(ShowLastOpenFileWarnings()));
+            }
+
+            DWINGEO DebugCurrentWidgetSizes();
+
+            m_SaveLastEnabled = true;
+            m_PendingLastSizeUpdate = true;
+            UpdateLastSizes();
+
 	} else {
-	    DBG qDebug() << "Main Window is now Inactive";
+	    DWINGEO qDebug() << "Main Window is transitioning from active to inactive";
         }
     }
 
@@ -5351,7 +5659,9 @@ void MainWindow::ConnectSignalsToSlots()
     m_headingMapper->setMapping(ui.actionHeadingNormal, "Normal");
 	connect(ui.actionColorDialog, SIGNAL(triggered()), this, SLOT(updatePalette()));
     // File
-    connect(ui.actionNew,           SIGNAL(triggered()), this, SLOT(New()));
+    connect(ui.actionNew,           SIGNAL(triggered()), this, SLOT(NewDefault()));
+    connect(ui.actionNewEpub2,      SIGNAL(triggered()), this, SLOT(NewEpub2()));
+    connect(ui.actionNewEpub3,      SIGNAL(triggered()), this, SLOT(NewEpub3()));
     connect(ui.actionOpen,          SIGNAL(triggered()), this, SLOT(Open()));
     connect(ui.actionNewHTMLFile,   SIGNAL(triggered()), m_BookBrowser, SLOT(AddNewHTML()));
     connect(ui.actionNewCSSFile,    SIGNAL(triggered()), m_BookBrowser, SLOT(AddNewCSS()));
@@ -5667,6 +5977,14 @@ void MainWindow::BreakTabConnections(ContentTab *tab)
         return;
     }
 
+    // first disconnect tab from us
+    disconnect(this, 0, tab, 0);
+    if (tab) disconnect(tab, 0, this, 0);
+    if (tab) disconnect(tab, 0, m_Book.data(), 0);
+    if (tab) disconnect(tab, 0, m_BookBrowser, 0);
+    if (tab) disconnect(tab, 0, m_ClipboardHistorySelector, 0);
+
+    // next disconnect it from ui.actions
     disconnect(ui.actionUndo,                      0, tab, 0);
     disconnect(ui.actionRedo,                      0, tab, 0);
     disconnect(ui.actionCut,                       0, tab, 0);
@@ -5701,10 +6019,6 @@ void MainWindow::BreakTabConnections(ContentTab *tab)
     disconnect(ui.actionPrint,                     0, tab, 0);
     disconnect(ui.actionAddToIndex,                0, tab, 0);
     disconnect(ui.actionMarkForIndex,              0, tab, 0);
-    disconnect(tab,                                0, this, 0);
-    disconnect(tab,                                0, m_Book.data(), 0);
-    disconnect(tab,                                0, m_BookBrowser, 0);
-    disconnect(tab,                                0, m_ClipboardHistorySelector, 0);
 }
 
 void MainWindow::updatePalette()
@@ -5732,3 +6046,4 @@ void MainWindow::colorChanged()
 	m_LastPasteTarget->PasteText(m_cd->currentColor().name(QColor::HexRgb));
 	
 }
+

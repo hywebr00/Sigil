@@ -68,7 +68,15 @@
      <addaction name="actionNewSVGFile"/>
      <addaction name="actionNewFullImageFile"/>
     </widget>
-    <addaction name="actionNew"/>
+    <widget class="QMenu" name="menuNew">
+     <property name="title">
+      <string>&amp;New</string>
+     </property>
+     <addaction name="actionNew"/>
+     <addaction name="actionNewEpub2"/>
+     <addaction name="actionNewEpub3"/>
+    </widget>
+    <addaction name="menuNew" />
     <addaction name="actionOpen"/>
     <addaction name="separator"/>
     <addaction name="menuAdd"/>
@@ -372,7 +380,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionNew"/>
+   <addaction name="actionNewEpub2"/>
+   <addaction name="actionNewEpub3"/>
    <addaction name="actionOpen"/>
    <addaction name="actionAddExistingFile"/>
    <addaction name="actionSave"/>
@@ -581,9 +590,10 @@
     <bool>false</bool>
    </attribute>
    <widget class="QToolButton" name="tbCase">
-    <property name="text">
-     <string>aA</string>
-    </property>
+    <property name="icon">
+    <iconset resource="../Resource_Files/main/main.qrc">
+     <normaloff>:/main/case-change_48px.png</normaloff>:/main/case-change_48px.png</iconset>
+   </property>
     <property name="toolTip">
      <string>set Case of Selected Text</string>
     </property>
@@ -646,17 +656,48 @@
      <normaloff>:/main/document-new_48px.png</normaloff>:/main/document-new_48px.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;New</string>
+    <string>New Default</string>
    </property>
    <property name="toolTip">
     <string>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;New&lt;/b&gt;&lt;/p&gt;
 
-&lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Create a new book.&lt;/p&gt;</string>
+&lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Create a new default book.&lt;/p&gt;</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
    </property>
   </action>
+
+  <action name="actionNewEpub2">
+   <property name="icon">
+    <iconset resource="../Resource_Files/main/main.qrc">
+     <normaloff>:/main/document-new-epub2_48px.png</normaloff>:/main/document-new-epub2_48px.png</iconset>
+   </property>
+   <property name="text">
+    <string>ePub&amp;2</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;New ePub2&lt;/b&gt;&lt;/p&gt;
+
+&lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Create a new ePub2 book.&lt;/p&gt;</string>
+   </property>
+  </action>
+
+  <action name="actionNewEpub3">
+   <property name="icon">
+    <iconset resource="../Resource_Files/main/main.qrc">
+     <normaloff>:/main/document-new-epub3_48px.png</normaloff>:/main/document-new-epub3_48px.png</iconset>
+   </property>
+   <property name="text">
+    <string>ePub&amp;3</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;p style=&quot;padding-top: 0.5em;&quot; &gt;&lt;b&gt;New ePub3&lt;/b&gt;&lt;/p&gt;
+
+&lt;p style=&quot;margin-left: 0.5em;&quot;&gt;Create a new ePub3 book.&lt;/p&gt;</string>
+   </property>
+  </action>
+
   <action name="actionSave">
    <property name="icon">
     <iconset resource="../Resource_Files/main/main.qrc">
@@ -938,6 +979,9 @@
     <iconset resource="../Resource_Files/main/main.qrc">
      <normaloff>:/main/process-stop_48px.png</normaloff>:/main/process-stop_48px.png</iconset>
    </property>
+   <property name="menuRole">
+     <enum>QAction::QuitRole</enum>
+   </property>
    <property name="text">
     <string>&amp;Quit</string>
    </property>
@@ -952,6 +996,9 @@
    <property name="icon">
     <iconset resource="../Resource_Files/main/main.qrc">
      <normaloff>:/main/help-browser_48px.png</normaloff>:/main/help-browser_48px.png</iconset>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::AboutRole</enum>
    </property>
    <property name="text">
     <string>&amp;About...</string>
@@ -1948,6 +1995,9 @@
    </property>
   </action>
   <action name="actionPreferences">
+   <property name="menuRole">
+    <enum>QAction::PreferencesRole</enum>
+   </property>
    <property name="text">
     <string>&amp;Preferences...</string>
    </property>

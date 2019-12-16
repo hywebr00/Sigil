@@ -43,7 +43,9 @@
 #include "Misc/MediaTypes.h"
 
 
-const QStringList groupA = QStringList() << "Text"<<"Styles"<<"Images"<<"Audio"<<"Fonts"<<"Video"<<"Misc";
+static const QStringList groupA = QStringList() << "Text"<<"Styles"<<"Images"<<"Fonts"<<"Audio"<<"Video"<<"Misc" << "opf" << "ncx";
+
+static const QStringList groupB = QStringList() << "Text"<<"Styles"<<"Images"<<"Fonts"<<"Audio"<<"Video"<<"Misc";
 
 
 // Exception for non-standard Apple files in META-INF.
@@ -105,7 +107,7 @@ QString FolderKeeper::DetermineFileGroup(const QString &filepath, const QString 
     if (filepath.contains(FILE_EXCEPTIONS)) return "other";
     if (mt.isEmpty()) {
         mt = MediaTypes::instance()->GetMediaTypeFromExtension(extension, "");
-        if (mt.isEmpty()) return "other";
+        if (mt.isEmpty()) return "Misc";
     }
     QString group = MediaTypes::instance()->GetGroupFromMediaType(mt, "");
     if (group.isEmpty()) {
@@ -116,7 +118,7 @@ QString FolderKeeper::DetermineFileGroup(const QString &filepath, const QString 
             group = MediaTypes::instance()->GetGroupFromMediaType(mt, "");
 	}
     }
-    if (group.isEmpty()) group = "other";
+    if (group.isEmpty()) group = "Misc";
     return group;
 }
 
@@ -137,11 +139,17 @@ Resource *FolderKeeper::AddContentFileToFolder(const QString &fullfilepath,
     QFileInfo fi(norm_file_path);
     QString filename = fi.fileName();
 
-    // make sure mediatype is properly assigned
+    // check if mediatype is recognized
     QString mt = mimetype;
+    if (!mt.isEmpty() && (MediaTypes::instance()->GetGroupFromMediaType(mt, "") == "")) {
+        qDebug() << "Warning: unrecognized mediatype in OPF: " << mimetype;
+        mt = "";
+    }
+
+    // try using the extension to determine the mediatype
     if (mt.isEmpty()) {
         QString extension = fi.suffix().toLower();
-	mt = MediaTypes::instance()->GetMediaTypeFromExtension(extension, "");
+	mt = MediaTypes::instance()->GetMediaTypeFromExtension(extension, mimetype);
     }
 
     QString group = DetermineFileGroup(norm_file_path, mt);
@@ -211,8 +219,8 @@ Resource *FolderKeeper::AddContentFileToFolder(const QString &fullfilepath,
         } else if (resdesc == "XMLResource") {
             resource = new XMLResource(m_FullPathToMainFolder, new_file_path);
         } else {
-            // Fallback mechanism
-	    new_file_path = m_FullPathToMainFolder + "/" + GetDefaultFolderForGroup("Misc") + "/" + filename;
+            // Fallback mechanism - follow previous setting of new_file_path
+            // But make it a generic Resource
             resource = new Resource(m_FullPathToMainFolder, new_file_path);
         }
 
@@ -373,15 +381,18 @@ NCXResource *FolderKeeper::GetNCX() const
 
 OPFResource*FolderKeeper::AddOPFToFolder(const QString &version, const QString &bookpath)
 {
-    QString OPFBookPath = "OEBPS/content.opf";
+    QString opfdir = GetDefaultFolderForGroup("opf");
+    QString OPFBookPath = "content.opf";
+    if (!opfdir.isEmpty()) {
+        OPFBookPath = opfdir + "/" + "content.opf";
+    }
     if (!bookpath.isEmpty()) {
         OPFBookPath = bookpath;
     }
     QDir folder(m_FullPathToMainFolder);
     QString sdir = Utility::startingDir(OPFBookPath);
     if (!sdir.isEmpty()) folder.mkpath(sdir);
-    m_OPF = new OPFResource(m_FullPathToMainFolder, m_FullPathToMainFolder + "/" + OPFBookPath, this);
-    m_OPF->SetEpubVersion(version);
+    m_OPF = new OPFResource(m_FullPathToMainFolder, m_FullPathToMainFolder + "/" + OPFBookPath, version, this);
     m_OPF->SetMediaType("application/oebps-package+xml");
     m_OPF->SetShortPathName(OPFBookPath.split('/').last());
     m_Resources[ m_OPF->GetIdentifier() ] = m_OPF;
@@ -412,20 +423,29 @@ void FolderKeeper::UpdateContainerXML(const QString& FullPathToMainFolder, const
 }
 
 
-NCXResource*FolderKeeper::AddNCXToFolder(const QString & version, const QString &bookpath)
+NCXResource*FolderKeeper::AddNCXToFolder(const QString &version, 
+					 const QString &bookpath, 
+					 const QString &first_textdir)
 {
-    QString NCXBookPath = "OEBPS/toc.ncx";
+    QString ncxdir = GetDefaultFolderForGroup("ncx");
+    QString NCXBookPath = "toc.ncx";
+    if (!ncxdir.isEmpty()) {
+        NCXBookPath = ncxdir + "/" + "toc.ncx";
+    }
     if (!bookpath.isEmpty()) {
         NCXBookPath = bookpath;
     }
+    QString textdir = GetDefaultFolderForGroup("Text");
+    if (first_textdir != "\\") textdir = first_textdir;
     QDir folder(m_FullPathToMainFolder);
     QString sdir = Utility::startingDir(NCXBookPath);
     if (!sdir.isEmpty()) folder.mkpath(sdir);
-    m_NCX = new NCXResource(m_FullPathToMainFolder, m_FullPathToMainFolder + "/" + NCXBookPath, this);
-    m_NCX->SetMainID(m_OPF->GetMainIdentifierValue());
+    m_NCX = new NCXResource(m_FullPathToMainFolder, m_FullPathToMainFolder + "/" + NCXBookPath, version, this);
     m_NCX->SetEpubVersion(version);
     m_NCX->SetMediaType("application/x-dtbncx+xml");
     m_NCX->SetShortPathName(NCXBookPath.split('/').last());
+    m_NCX->FillWithDefaultText(version, textdir);
+    m_NCX->SetMainID(m_OPF->GetMainIdentifierValue());
     m_Resources[ m_NCX->GetIdentifier() ] = m_NCX;
     m_Path2Resource[ m_NCX->GetRelativePath() ] = m_NCX;
     connect(m_NCX, SIGNAL(Deleted(const Resource *)), this, SLOT(RemoveResource(const Resource *)));
@@ -775,7 +795,7 @@ void FolderKeeper::SetGroupFolders(const QStringList &bookpaths, const QStringLi
         QList<int> countlst = group_count[group];
         QStringList sortedlst = Utility::sortByCounts(folderlst, countlst);
         group_folder[group] = sortedlst;
-        if (groupA.contains(group)) {
+        if (groupB.contains(group)) {
             QString afolder = sortedlst.at(0);
             if (afolder.indexOf(group.toLower()) > -1) use_lower_case = true;
         }

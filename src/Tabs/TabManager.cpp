@@ -44,17 +44,21 @@
 
 TabManager::TabManager(QWidget *parent)
     :
-    QTabWidget(parent)
+    QTabWidget(parent),
+    m_LastContentTab(NULL)
 {
     QTabBar *tab_bar = new TabBar(this);
     setTabBar(tab_bar);
     connect(tab_bar, SIGNAL(TabBarClicked()),            this, SLOT(SetFocusInTab()));
     connect(tab_bar, SIGNAL(CloseOtherTabsRequest(int)), this, SLOT(CloseOtherTabs(int)));
-    connect(this, SIGNAL(currentChanged(int)),         this, SLOT(EmitTabChanged()));
+    connect(this, SIGNAL(currentChanged(int)),         this, SLOT(EmitTabChanged(int)));
     connect(this, SIGNAL(tabCloseRequested(int)),      this, SLOT(CloseTab(int)));
     setDocumentMode(true);
+
+    // re-enable tab drag and drop as a test to see if last commit helped
+#if 0    
     // QTabBar has a bug when a user "presses and flicks" on a non current tab it will cause it 
-    // to setCurrentIndex() but during EmitTabChanged() it then may allows the resulting mouseMoveEvent
+    // to setCurrentIndex() but during EmitTabChanged(int) it then may allows the resulting mouseMoveEvent
     // be processed on the same index that is being set in setCurrentIndex which causes a crash.
     // This bug makes it dangerous to enable dragging and dropping to move tabs in the QTabBar
     // So default to non-movable but let a environment variable override this decision
@@ -63,6 +67,10 @@ TabManager::TabManager(QWidget *parent)
     } else {
         setMovable(false);
     }
+#else
+    setMovable(true);
+#endif
+
     setTabsClosable(true);
     // setElideMode(Qt::ElideRight); this is the default after qt-5.6
     setUsesScrollButtons(true);
@@ -338,13 +346,33 @@ void TabManager::MakeCentralTab(ContentTab *tab)
     setCurrentIndex(indexOf(tab));
 }
 
-void TabManager::EmitTabChanged()
+// Note: m_LastContentTab was previously declared as follows:
+//
+//     QPointer<ContentTab> m_LastContentTab;
+//
+// instead of just a simple:
+//
+//     ContentTab * m_LastContentTab;
+//
+// but this caused many issues with fast deleting and updating of 
+// this special pointer.
+//
+// This pointer only ever records the last curent ContentTab and it is 
+// never shared outside the TabManager and it remains valid until the TabManager
+// itself is destroyed.  So there was no rhyme or reason for using or needing the 
+// QPointer type here especially with its associated problems with fast/recursive updates. 
+
+void TabManager::EmitTabChanged(int new_index)
 {
     ContentTab *current_tab = qobject_cast<ContentTab *>(currentWidget());
-
-    if (m_LastContentTab.data() != current_tab) {
-        emit TabChanged(m_LastContentTab.data(), current_tab);
-        m_LastContentTab = QPointer<ContentTab>(current_tab);
+    if (current_tab) {
+        if (m_LastContentTab != current_tab) {
+            emit TabChanged(m_LastContentTab, current_tab);
+            m_LastContentTab = current_tab;
+        }
+    } else {
+        // this should not happen but we do not want stale info in this pointer
+        m_LastContentTab = NULL;
     }
 }
 
@@ -352,7 +380,22 @@ void TabManager::EmitTabChanged()
 void TabManager::DeleteTab(ContentTab *tab_to_delete)
 {
     Q_ASSERT(tab_to_delete);
+    // to prevent segfaults, disconnect and reconnect the currentChanged()
+    // signal and invoke EmitTabChanged() manually after QTabBar::removeTab(int) 
+    // completes because QTabBar::setCurrentIndex(int) somehow invokes processEvents()
+    // ***BEFORE*** properly setting the current index
+    disconnect(this, SIGNAL(currentChanged(int)), this, SLOT(EmitTabChanged(int)));
     removeTab(indexOf(tab_to_delete));
+    connect(this, SIGNAL(currentChanged(int)), this, SLOT(EmitTabChanged(int)));
+    // now do the short version of EmitTabChanged()
+    ContentTab *new_tab = qobject_cast<ContentTab *>(currentWidget());
+    if (new_tab) {
+        emit TabChanged(tab_to_delete, new_tab);
+        m_LastContentTab = new_tab;
+    } else {
+        // this should not happen but we do not want stale info in this pointer
+        m_LastContentTab = NULL;
+    }
     tab_to_delete->deleteLater();
 }
 
@@ -367,7 +410,7 @@ void TabManager::CloseTab(int tab_index, bool force)
     }
 
     ContentTab *tab = qobject_cast<ContentTab *>(widget(tab_index));
-    tab->Close();
+    if (tab) tab->Close();
     emit TabCountChanged();
 }
 
@@ -578,6 +621,12 @@ bool TabManager::AddNewContentTab(ContentTab *new_tab, bool precede_current_tab)
     if (new_tab == NULL) {
         return false;
     }
+
+    // before adding a tab make sure m_LastContentTab has been
+    // properly updated to reflect the current tab
+    ContentTab *old_tab = qobject_cast<ContentTab *>(currentWidget());
+    m_LastContentTab = old_tab;
+
     int idx = -1;
     if (!precede_current_tab) {
 
@@ -592,7 +641,9 @@ bool TabManager::AddNewContentTab(ContentTab *new_tab, bool precede_current_tab)
 #endif
 
         setCurrentWidget(new_tab);
+
         new_tab->setFocus();
+
     } else {
 
 #if defined(Q_OS_MAC)
@@ -616,7 +667,7 @@ bool TabManager::AddNewContentTab(ContentTab *new_tab, bool precede_current_tab)
 void TabManager::UpdateTabDisplay()
 {
     for (int i = 0; i < count(); ++i) {
-        ContentTab *tab = dynamic_cast<ContentTab *>(widget(i));
+        ContentTab *tab = qobject_cast<ContentTab *>(widget(i));
 
         if (tab) {
             tab->UpdateDisplay();

@@ -35,6 +35,8 @@
 #include "Dialogs/RenameTemplate.h"
 #include "Dialogs/AddSemantics.h"
 #include "Dialogs/SelectFolder.h"
+#include "Dialogs/RERenamer.h"
+#include "Dialogs/RETable.h"
 #include "Importers/ImportHTML.h"
 #include "MainUI/BookBrowser.h"
 #include "MainUI/MainWindow.h"
@@ -305,6 +307,7 @@ void BookBrowser::OpenContextMenu(const QPoint &point)
     m_Delete->setEnabled(true);
     m_Merge->setEnabled(true);
     m_Rename->setEnabled(true);
+    m_RERename->setEnabled(true);
     m_Move->setEnabled(true);
 }
 
@@ -479,11 +482,12 @@ int BookBrowser::ValidSelectedItemCount()
     return count;
 }
 
-void BookBrowser::AddFile(QString filepath)
+Resource* BookBrowser::AddFile(QString filepath)
 {
-    m_Book->GetFolderKeeper()->AddContentFileToFolder(filepath);
+    Resource * resource = m_Book->GetFolderKeeper()->AddContentFileToFolder(filepath);
     emit BookContentModified();
     Refresh();
+    return resource;
 }
 
 void BookBrowser::AddNew()
@@ -661,12 +665,13 @@ CSSResource* BookBrowser::CreateHTMLTOCCSSFile()
     return css_resource;
 }
 
-void BookBrowser::CreateIndexCSSFile()
+CSSResource* BookBrowser::CreateIndexCSSFile()
 {
     CSSResource *css_resource = m_Book->CreateIndexCSSFile();
     m_OPFModel->RenameResource(css_resource, SGC_INDEX_CSS_FILENAME);
     emit BookContentModified();
     Refresh();
+    return css_resource;
 }
 
 QStringList BookBrowser::AddExisting(bool only_multimedia, bool only_images)
@@ -678,8 +683,19 @@ QStringList BookBrowser::AddExisting(bool only_multimedia, bool only_images)
         m_LastFolderOpen = "";
     }
 
+    QFileDialog::Options options = QFileDialog::Options();
+#ifdef Q_OS_MAC
+    options = options | QFileDialog::DontUseNativeDialog;
+#endif
+    
     // filepaths are full absolute file paths to the files to be added
-    QStringList filepaths = QFileDialog::getOpenFileNames(this, tr("Add Existing Files"), m_LastFolderOpen, filter_string);
+    QStringList filepaths = QFileDialog::getOpenFileNames(this, 
+							  tr("Add Existing Files"), 
+							  m_LastFolderOpen, 
+							  filter_string,
+							  NULL,
+							  options
+                                                          );
 
     if (filepaths.isEmpty()) {
         return added_book_paths;
@@ -865,12 +881,18 @@ void BookBrowser::SaveAsFile(Resource *resource)
     QString save_path = m_LastFolderSaveAs + "/" + filename;
     QString filter_string = "";
     QString default_filter = "";
+    QFileDialog::Options options = QFileDialog::Options();
+#ifdef Q_OS_MAC
+    options = options | QFileDialog::DontUseNativeDialog;
+#endif
+    
     QString destination = QFileDialog::getSaveFileName(this,
                           tr("Save As File"),
                           save_path,
                           filter_string,
-                          &default_filter
-                                                      );
+			  &default_filter,
+                          options
+						       );
 
     if (destination.isEmpty()) {
         return;
@@ -895,9 +917,17 @@ void BookBrowser::SaveAsFile(Resource *resource)
 void BookBrowser::SaveAsFiles()
 {
     QList <Resource *> resources = ValidSelectedResources();
-    QString dirname = QFileDialog::getExistingDirectory(this,
+    QFileDialog::Options options = QFileDialog::Options() | QFileDialog::ShowDirsOnly;
+#ifdef Q_OS_MAC
+    options = options | QFileDialog::DontUseNativeDialog;
+#endif
+
+    QString dirname = QFileDialog::getExistingDirectory(
+		      this,
                       tr("Choose the directory to save the files to"),
-                      m_LastFolderSaveAs);
+		      m_LastFolderSaveAs,
+                      options
+							);
 
     if (dirname.isEmpty()) {
         return;
@@ -1005,6 +1035,7 @@ void BookBrowser::MoveResourceList(const QList<Resource*> &resources, const QStr
     // Refresh();
 }
 
+
 void BookBrowser::Rename()
 {
     QList <Resource *> resources = ValidSelectedResources();
@@ -1024,6 +1055,56 @@ void BookBrowser::Rename()
         RenameSelected();
     }
 }
+
+void BookBrowser::REXRename()
+{
+    QList <Resource *> resources = ValidSelectedResources();
+
+    if (resources.isEmpty()) {
+        return;
+    }
+
+    Resource::ResourceType resource_type = resources.first()->Type();
+
+    QString retext;
+    QString replacetext;
+    int trycnt = 4;
+    bool done = false;
+    QStringList new_filenames;
+
+    while(!done && (trycnt > 0)) {
+
+        // Get the regular expression and its replacement from the user
+        RERenamer renamer(retext, replacetext,this);
+        if (renamer.exec() != QDialog::Accepted) {
+            return;
+        }
+
+        retext = renamer.GetREText();
+        replacetext = renamer.GetReplaceText();
+
+        // Now make sure the user approves of the name changes
+        RETable renametable(resources, retext, replacetext, this);
+        if (renametable.exec() != QDialog::Accepted) {
+            trycnt--;
+        } else {
+	    new_filenames = renametable.GetNewNames();
+            done = true;
+	}
+    }
+
+    if (!done) return;
+
+    // After a rename we want to keep the resources in the identical position.
+    int scrollY = m_TreeView->verticalScrollBar()->value();
+
+    // Rename the resources
+    m_OPFModel->RenameResourceList(resources, new_filenames);
+
+    SelectResources(resources);
+    m_TreeView->verticalScrollBar()->setSliderPosition(scrollY);
+}
+
 
 void BookBrowser::Move()
 {
@@ -1515,14 +1596,13 @@ void BookBrowser::AddSemanticCode()
             codes = addmeaning.GetSelectedEntries();
             if (!codes.isEmpty()) {
                 QString new_code = codes.at(0);
-		// do not allow a user to change any semantics on the nav resource as it
-		// must be set to "toc"
-		if (html_resource != nav_resource) {
+		// do allow a user to change only the toc semantics on the nav resource
+		if ((html_resource != nav_resource) || (new_code == "toc")) {
                     NavProcessor navproc(nav_resource);
                     navproc.AddLandmarkCode(html_resource, new_code);
                     m_OPFModel->Refresh();
                     emit BookContentModified();
-		}
+		} 
             }
         }
     } else {
@@ -1674,6 +1754,7 @@ void BookBrowser::CreateContextMenuActions()
     m_CopyHTML                = new QAction(tr("Add Copy"),              this);
     m_CopyCSS                 = new QAction(tr("Add Copy"),              this);
     m_Rename                  = new QAction(tr("Rename") + "...",        this);
+    m_RERename                = new QAction(tr("RegEx Rename") + "...",  this);
     m_Move                    = new QAction(tr("Move") + "...",          this);
     m_Delete                  = new QAction(tr("Delete") + "...",        this);
     m_CoverImage              = new QAction(tr("Cover Image"),           this);
@@ -1706,6 +1787,8 @@ void BookBrowser::CreateContextMenuActions()
     m_Rename->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_R));
     m_Rename->setToolTip(tr("Rename selected file(s)"));
     sm->registerAction(this, m_Rename, "MainWindow.BookBrowser.Rename");
+    m_RERename->setToolTip(tr("Use Regular Expressions to Rename selected file(s)"));
+    sm->registerAction(this, m_Rename, "MainWindow.BookBrowser.RERename");
     // m_Move->setShortcut(QKeySequence(Qt::CTRL + Qt::ALT + Qt::Key_R));
     m_Move->setToolTip(tr("Move selected file(s) to a new folder"));
     sm->registerAction(this, m_Move, "MainWindow.BookBrowser.Move");
@@ -1719,6 +1802,7 @@ void BookBrowser::CreateContextMenuActions()
     addAction(m_Delete);
     addAction(m_Merge);
     addAction(m_Rename);
+    addAction(m_RERename);
     addAction(m_Move);
     addAction(m_LinkStylesheets);
     addAction(m_AddSemantics);
@@ -1756,6 +1840,7 @@ bool BookBrowser::SuccessfullySetupContextMenu(const QPoint &point)
             m_Delete->setEnabled(m_LastContextMenuType != Resource::HTMLResourceType ||
                                  (AllHTMLResources().count() > 1 && resources.count() != item_count));
             m_ContextMenu->addAction(m_Rename);
+            m_ContextMenu->addAction(m_RERename);
 	    m_ContextMenu->addAction(m_Move);
         }
         if (resource->Type() == Resource::HTMLResourceType) {
@@ -1954,6 +2039,7 @@ void BookBrowser::ConnectSignalsToSlots()
     connect(m_AddNewSVG,               SIGNAL(triggered()), this, SLOT(AddNewSVG()));
     connect(m_AddExisting,             SIGNAL(triggered()), this, SLOT(AddExisting()));
     connect(m_Rename,                  SIGNAL(triggered()), this, SLOT(Rename()));
+    connect(m_RERename,                SIGNAL(triggered()), this, SLOT(REXRename()));
     connect(m_Move,                    SIGNAL(triggered()), this, SLOT(Move()));
     connect(m_Delete,                  SIGNAL(triggered()), this, SLOT(Delete()));
     connect(m_CoverImage,              SIGNAL(triggered()), this, SLOT(SetCoverImage()));

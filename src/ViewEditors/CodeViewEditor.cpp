@@ -1699,7 +1699,7 @@ void CodeViewEditor::GoToLinkOrStyle()
             emit LinkClicked(QUrl(url_name));
         }
     } else if (IsPositionInOpeningTag()) {
-        qDebug() << "we are here";
+        // qDebug() << "we are here";
         GoToStyleDefinition();
     } else {
         emit ShowStatusMessageRequest(tr("You must be in an opening HTML tag to use this feature."));
@@ -3513,7 +3513,7 @@ void CodeViewEditor::ReformatHTML(bool all, bool to_valid)
     QString original_text;
     QString new_text;
     QWidget *mainWindow_w = Utility::GetMainWindow();
-    MainWindow *mainWindow = dynamic_cast<MainWindow *>(mainWindow_w);
+    MainWindow *mainWindow = qobject_cast<MainWindow *>(mainWindow_w);
     if (!mainWindow) {
         Utility::DisplayStdErrorDialog("Could not determine main window.");
         return;

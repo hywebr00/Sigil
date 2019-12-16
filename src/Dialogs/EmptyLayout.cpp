@@ -20,6 +20,7 @@
 *************************************************************************/
 
 #include <QDialog>
+#include <QFileDialog>
 #include <QInputDialog>
 #include <QMenu>
 #include <QAction>
@@ -53,7 +54,7 @@ static const QString SETTINGS_GROUP = "empty_epub_layout";
 
 EmptyLayout::EmptyLayout(const QString &epubversion, QWidget *parent)
   : QDialog(parent),
-    m_MainFolder(m_TempFolder.GetPath()),
+    m_MainFolder(QDir::cleanPath(m_TempFolder.GetPath())),
     m_EpubVersion(epubversion),
     m_BookPaths(QStringList()),
     m_hasOPF(false),
@@ -75,7 +76,7 @@ EmptyLayout::EmptyLayout(const QString &epubversion, QWidget *parent)
 
     // initialize QTreeView for our model
     view->setModel(m_fsmodel);
-    const QModelIndex rootIndex = m_fsmodel->index(QDir::cleanPath(m_MainFolder));
+    const QModelIndex rootIndex = m_fsmodel->index(m_MainFolder);
     if (rootIndex.isValid()) {
         view->setRootIndex(rootIndex);
     }
@@ -94,9 +95,7 @@ EmptyLayout::EmptyLayout(const QString &epubversion, QWidget *parent)
     // do not allow inline file folder name editing
     view->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    if (!isVisible()) {
-        ReadSettings();
-    }
+    ReadSettings();
 
     // Set up a popup menu with allowed file types
     setupMarkersMenu();
@@ -105,6 +104,8 @@ EmptyLayout::EmptyLayout(const QString &epubversion, QWidget *parent)
     addFileButton->setMenu(m_filemenu);
     
     // connect signals to slots
+    connect(loadButton,    SIGNAL(clicked()),           this, SLOT(loadDesign()));
+    connect(saveButton,    SIGNAL(clicked()),           this, SLOT(saveDesign()));
     connect(delButton,     SIGNAL(clicked()),           this, SLOT(deleteCurrent()));
     connect(addButton,     SIGNAL(clicked()),           this, SLOT(addFolder()));
     connect(renameButton,  SIGNAL(clicked()),           this, SLOT(renameCurrent()));
@@ -115,9 +116,6 @@ EmptyLayout::EmptyLayout(const QString &epubversion, QWidget *parent)
     connect(view->selectionModel(),
             SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)), 
             this, SLOT(updateActions()));
-
-    connect(m_fsmodel, SIGNAL(fileRenamed(const QString&, const QString&, const QString&)),
-	    this, SLOT(fileWasRenamed(const QString&, const QString&, const QString&)));
 
     // assign basic shortcuts
     delButton->     setShortcut(QKeySequence(Qt::ControlModifier + Qt::ShiftModifier + Qt::Key_Delete));
@@ -165,12 +163,6 @@ void EmptyLayout::setupMarkersMenu()
 }
 
 
-void EmptyLayout::fileWasRenamed(const QString &apath, const QString &oldname, const QString &newname)
-{
-    qDebug() << "Signal a file was renamed " << apath << oldname << newname;
-}
-
-
 QString EmptyLayout::GetInput(const QString& title, const QString& prompt, const QString& initvalue)
 {
     QString result;
@@ -182,6 +174,179 @@ QString EmptyLayout::GetInput(const QString& title, const QString& prompt, const
         result = dinput.textValue();
     }
     return result;
+}
+
+
+bool EmptyLayout::cleanEpubRoot()
+{
+    // first hide the view
+    view->hide();
+
+    disconnect(view->selectionModel(),
+            SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)), 
+            this, SLOT(updateActions()));
+    
+    QItemSelectionModel *m = view->selectionModel();
+    // Using NULL here sets the model to QAbstractItemModelPrivate::staticEmptyModel() (see source)
+    view->setModel(NULL);
+    delete m;
+
+    delete m_fsmodel;
+    m_fsmodel = NULL;
+
+    // Delete the EpubRoot
+    QString adir = m_MainFolder + "/EpubRoot";
+    QDir eroot(adir);
+    bool success = eroot.removeRecursively();
+    if (!success) qDebug() << "Error:: Attempt to remove EpubRoot failed";
+    
+    // remake Epubroot
+    QDir mfolder(m_MainFolder);
+    mfolder.mkdir("EpubRoot");
+    
+    // initialize to empty state
+    m_hasOPF = false;
+    m_hasNCX = false;
+    m_hasNAV = false;
+    m_BookPaths = QStringList();
+
+    return success;
+}
+
+
+void EmptyLayout::loadDesign()
+{
+    QFileDialog::Options options = QFileDialog::Options();
+#ifdef Q_OS_MAC
+    options = options | QFileDialog::DontUseNativeDialog;
+#endif
+    QString inipath = QFileDialog::getOpenFileName(this, 
+                                                   tr("Select previously saved layout design ini File"), 
+                                                   m_LastDirSaved, 
+                                                   tr("Settings Files (*.ini)"),
+                                                   NULL,
+                                                   options);
+
+    if (inipath.isEmpty()) return;
+    if (!QFile::exists(inipath)) return;
+ 
+    QStringList bookpaths;
+    {
+        SettingsStore ss(inipath);
+        const QString SETTINGS_GROUP = "bookpaths";
+        const QString KEY_BOOKPATHS = SETTINGS_GROUP + "/" + "empty_epub_bookpaths";
+        while (!ss.group().isEmpty()) {
+	    ss.endGroup();
+        }
+        bookpaths = ss.value(KEY_BOOKPATHS,QStringList()).toStringList();
+    }
+
+    if (bookpaths.isEmpty()) return;
+
+    cleanEpubRoot();
+
+    // first write the files you have loaded
+    QDir eroot(m_MainFolder + "/EpubRoot");
+    foreach(QString bkpath, bookpaths) {
+        // update the current state 
+        if (bkpath.endsWith(".opf")) m_hasOPF = true;
+        if (bkpath.endsWith(".ncx")) m_hasNCX = true;
+        if (bkpath.endsWith(".xhtml") && !bkpath.contains("marker.xhtml")) m_hasNAV = true;
+        if (bkpath.startsWith('/')) bkpath.remove(0,1);
+	QString sdir = Utility::startingDir(bkpath);
+        if (!sdir.isEmpty()) eroot.mkpath(sdir);
+        // now we are finally ready to create the file itself
+        // use the equivalent of "touch" to create files
+	QString fpath = m_MainFolder + "/EpubRoot" + "/" + bkpath;
+	QFile afile(fpath);
+	if (afile.open(QFile::WriteOnly)) afile.close();
+    }
+
+    // Now finally create a new Model and reset the view
+    m_fsmodel = new QFileSystemModel();
+    m_fsmodel->setReadOnly(false);
+    m_fsmodel->setFilter(QDir::NoDotAndDotDot | QDir::AllDirs | QDir::Files);
+    m_fsmodel->setRootPath(m_MainFolder);
+
+    // re - initialize QTreeView for our model
+    // view->reset();
+
+    QItemSelectionModel * m = view->selectionModel();
+    view->setModel(m_fsmodel);
+    if (m) delete m;
+
+    const QModelIndex rootIndex = m_fsmodel->index(m_MainFolder);
+    if (rootIndex.isValid()) {
+        view->setRootIndex(rootIndex);
+    }
+
+    view->setAnimated(false);
+    view->setIndentation(20);
+    view->setSortingEnabled(true);
+    const QSize availableSize = QApplication::desktop()->availableGeometry(view).size();
+    view->resize(availableSize / 2);
+    view->setColumnWidth(0, view->width() / 3);
+    view->setWindowTitle(QObject::tr("Custom Epub Layout Designer"));
+    view->setRootIsDecorated(true);
+    // column 0 is name, 1 is size, 2 is kind, 3 is date modified
+    view->hideColumn(1);
+    view->hideColumn(3);
+    view->setHeaderHidden(false);
+    // do not allow inline file folder name editing
+    view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    connect(view->selectionModel(),
+            SIGNAL(selectionChanged(const QItemSelection &, const QItemSelection &)), 
+            this, SLOT(updateActions()));
+
+    view->show();
+    QModelIndex index = m_fsmodel->index(m_MainFolder + "/EpubRoot");
+    view->setCurrentIndex(index);
+    view->expandAll();
+    updateActions();
+}
+
+
+void EmptyLayout::saveDesign()
+{
+    QString fullfolderpath = m_MainFolder + "/EpubRoot";
+    QString basepath = fullfolderpath;
+    QStringList bookpaths = GetPathsToFilesInFolder(fullfolderpath, basepath);
+
+    QString filter_string = "*.ini;;*.*";
+    QString default_filter = "ini";
+    QString save_path = m_LastDirSaved + "/" + m_LastFileSaved;
+
+    QFileDialog::Options options = QFileDialog::Options();
+#ifdef Q_OS_MAC
+    options = options | QFileDialog::DontUseNativeDialog;
+#endif
+
+    QString destination = QFileDialog::getSaveFileName(this,
+						       tr("Save current design to an ini File"),
+						       save_path,
+						       filter_string,
+						       &default_filter,
+                                                       options);
+    if (destination.isEmpty()) {
+        return;
+    }
+
+    // force destination setting store destructor to invoked before routine exits
+    { 
+        SettingsStore ss(destination);
+        const QString SETTINGS_GROUP = "bookpaths";
+        const QString KEY_BOOKPATHS = SETTINGS_GROUP + "/" + "empty_epub_bookpaths";
+        while (!ss.group().isEmpty()) {
+	    ss.endGroup();
+        }
+        ss.setValue(KEY_BOOKPATHS, bookpaths);
+    }
+
+    m_LastDirSaved = QFileInfo(destination).absolutePath();
+    m_LastFileSaved = QFileInfo(destination).fileName();
+
+    WriteSettings();
 }
 
 
@@ -296,14 +461,14 @@ void EmptyLayout::saveData()
         if (apath.endsWith(".xhtml") && !apath.contains("marker.xhtml")) numnav++;
     }
     QStringList Errors;
-    if (numopf != 1) Errors << tr("Multiple or missing OPF.");
+    if (numopf != 1) Errors << tr("A single OPF file is required.");
     if (numtxt < 1)  Errors << tr("At least one xhtml marker must exist.");
     if (numimg < 1)  Errors << tr("At least one image marker must exist.");
     if (numcss < 1)  Errors << tr("At least one css marker must exist.");
     if (m_EpubVersion.startsWith("2")) {
-        if (numncx != 1) Errors << tr("Multiple or Missing NCX.");
+        if (numncx != 1) Errors << tr("A single NCX file is required.");
     } else {
-        if (numnav != 1) Errors << tr("Multiple or Missing NAV.");
+        if (numnav != 1) Errors << tr("A single NAV file is required.");
     }
     if (!Errors.isEmpty()) {
         QString error_message = Errors.join('\n');
@@ -331,29 +496,16 @@ void EmptyLayout::saveData()
     }
 
     WriteSettings();
-
-    // Windows has issues removing or deleting files while the file
-    // watcher is running and QFileSystemModel made private disabling the watcher
-    // So try manually removing the EpubRoot folder via the QFileSystemModel
-    QModelIndex index = m_fsmodel->index(m_MainFolder + "/EpubRoot");
-    if (index.isValid()) {
-        m_fsmodel->remove(index);
-    }
+    cleanEpubRoot();
     QDialog::accept();
 }
 
 
 void EmptyLayout::reject()
 {
-    // Windows has issues removing or deleting files while the file
-    // watcher is running and QFileSystemModel made private disabling the watcher
-    // So try manually removing the EpubRoot folder via the QFileSystemModel
-    QModelIndex index = m_fsmodel->index(m_MainFolder + "/EpubRoot");
-    if (index.isValid()) {
-        m_fsmodel->remove(index);
-    }
+
     WriteSettings();
-    m_BookPaths = QStringList();
+    cleanEpubRoot();
     QDialog::reject();
 }
 
@@ -393,6 +545,10 @@ void EmptyLayout::ReadSettings()
 {
     SettingsStore settings;
     settings.beginGroup(SETTINGS_GROUP);
+
+    m_LastDirSaved = settings.value("lastdirsaved", Utility::DefinePrefsDir()).toString();
+    m_LastFileSaved = settings.value("lastfilesaved", "layoutdesign.ini").toString();
+
     // The size of the window and it's full screen status
     QByteArray geometry = settings.value("geometry").toByteArray();
 
@@ -407,6 +563,9 @@ void EmptyLayout::WriteSettings()
 {
     SettingsStore settings;
     settings.beginGroup(SETTINGS_GROUP);
+    settings.setValue("lastdirsaved", m_LastDirSaved);
+    settings.setValue("lastfilesaved", m_LastFileSaved);
+
     // The size of the window and it's full screen status
     settings.setValue("geometry", saveGeometry());
     settings.endGroup();

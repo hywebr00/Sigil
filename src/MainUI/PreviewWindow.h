@@ -1,7 +1,8 @@
 /************************************************************************
 **
-**  Copyright (C) 2019 Kevin B. Hendricks, Stratford, Ontario, Canada
-**  Copyright (C) 2012 Dave Heiland, John Schember
+**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford Ontario Canada
+**  Copyright (C) 2015-2019 Doug Massay
+**  Copyright (C) 2012      Dave Heiland, John Schember
 **
 **  This file is part of Sigil.
 **
@@ -64,6 +65,13 @@ public slots:
     void ReloadPreview();
     void InspectorClosed(int);
 
+    /**
+     * Set DockWidget titlebar text independently of tab text (when tabbed)
+     * @param text The title to use.
+     */
+    void setTitleText(const QString &text);
+    void previewFloated(bool wasFloated);
+
 signals:
     void Shown();
     void ZoomFactorChanged(float factor);
@@ -82,19 +90,26 @@ signals:
      * @param url The URL to open.
      */
     void ScrollToFragmentRequest(const QString &fragment);
- 
+
 
 protected:
     virtual void hideEvent(QHideEvent* event);
     virtual void showEvent(QShowEvent* event);
     void resizeEvent(QResizeEvent * event);
 
+    /**
+     * Reimplemented from QDockWidget to enable setTitleText()
+     * @param event The underlying QPaintEvent.
+     */
+    virtual void paintEvent(QPaintEvent* event);
+
 private:
     void SetupView();
     void LoadSettings();
     void ConnectSignalsToSlots();
     void UpdateWindowTitle();
-    QString fixup_fullscreen_svg_images(QString &text);
+    bool fixup_fullscreen_svg_images(const QString &text);
+    const QString titleText();
 
     QWidget *m_MainWidget;
     QVBoxLayout *m_Layout;
@@ -103,6 +118,7 @@ private:
     ViewPreview *m_Preview;
     Inspector *m_Inspector;
     QString m_Filepath;
+    QString m_titleText;
 
     QString m_mathjaxurl;
     QString m_usercssurl;

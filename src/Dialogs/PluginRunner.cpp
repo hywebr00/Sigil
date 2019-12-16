@@ -543,12 +543,27 @@ void PluginRunner::processError(QProcess::ProcessError error)
     ui.statusLbl->setText(tr("Status: error"));
 }
 
+// should cover both escape key use and using x to close the runner dialog
+void PluginRunner::reject()
+{
+    // qDebug() << "in reject";
+    cancelPlugin();
+    QDialog::reject();
+}
 
 void PluginRunner::cancelPlugin()
 {
+    // qDebug() << "in cancelPlugin()";
+    if (m_process.state() == QProcess::Running) {
+        m_process.terminate();
+    }
+    m_process.waitForFinished(2000);
+
     if (m_process.state() == QProcess::Running) {
         m_process.kill();
     }
+    m_process.waitForFinished(2000);
+
     ui.okButton->setEnabled(true);
 
     ui.progressBar->setRange(0,100);
@@ -829,8 +844,16 @@ bool PluginRunner::addFiles(const QStringList &files)
             QFileInfo fi(epubPath);
             ui.statusLbl->setText(tr("Status: Loading") + " " + fi.fileName());
 #ifdef Q_OS_MAC
-            MainWindow *new_window = new MainWindow(epubPath, true);
+            // creating a new MainWindow inside a modal QDialog seems to have issues
+            // about mouse pointer location and focus that may cause a segfault in 
+            // showModal() -> isBlockingWindow() -> isAncestorOf() when a
+            // Preferences Dialog is invoked in that New Window before focus is outside
+            // of the Plugin Runner and in the new Window.  The segfault is due
+            // to stale pointers in qApplication::modalWindowList().
+            MainWindow *new_window = new MainWindow(epubPath, "", true);
             new_window->show();
+            // will this be allowed if PluginRunner is Application Modal
+	    new_window->activateWindow();
 #else
             // For Linux and Windows will replace current book
             // So Throw Up a Dialog to See if they want to proceed
@@ -919,7 +942,7 @@ bool PluginRunner::modifyFiles(const QStringList &files)
 {
     ui.statusLbl->setText(tr("Status: cleaning up - modifying files"));
     // rearrange list to force content.opf and toc.ncx modifications to be done last
-    qDebug() << files;
+    // qDebug() << files;
     QStringList newfiles;
     QString modifyopf;
     QString modifyncx;
