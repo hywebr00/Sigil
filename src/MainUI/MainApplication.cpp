@@ -1,5 +1,6 @@
 /************************************************************************
 **
+**  Copyright (C) 2019 Kevin B. Hendricks, Stratford Ontario Canada
 **  Copyright (C) 2012 John Schember <john@nachtimwald.com>
 **  Copyright (C) 2012 Grant Drake
 **  Copyright (C) 2012 Dave Heiland
@@ -21,11 +22,29 @@
 **
 *************************************************************************/
 
+#include <QApplication>
+#include <QTimer>
+#include <QStyleFactory>
+#include <QStyle>
+#include <QPalette>
+#include <QDebug>
+
 #include "MainUI/MainApplication.h"
 
 MainApplication::MainApplication(int &argc, char **argv)
-    : QApplication(argc, argv)
+    : QApplication(argc, argv),
+      m_Style(nullptr),
+      m_isDark(false)
 {
+#ifdef Q_OS_MAC
+    // on macOS the application palette actual text colors never seem to change when DarkMode is enabled
+    // so use a mac style standardPalette
+    m_Style = QStyleFactory::create("macintosh");
+    QPalette app_palette = m_Style->standardPalette();
+    m_isDark = app_palette.color(QPalette::Active,QPalette::WindowText).lightness() > 128;
+    // do not forget to set the initial app palette as well
+    setPalette(app_palette);
+#endif
 }
 
 bool MainApplication::event(QEvent *pEvent)
@@ -35,6 +54,29 @@ bool MainApplication::event(QEvent *pEvent)
     } else if (pEvent->type() == QEvent::ApplicationDeactivate) {
         emit applicationDeactivated();
     }
-
+#ifdef Q_OS_MAC
+    if (pEvent->type() == QEvent::ApplicationPaletteChange) {
+        // qDebug() << "Application Palette Changed";
+	QTimer::singleShot(0, this, SLOT(EmitPaletteChanged()));
+    }
+#endif
     return QApplication::event(pEvent);
+}
+
+void MainApplication::EmitPaletteChanged()
+{
+#ifdef Q_OS_MAC
+    // on macOS the application palette actual colors never seem to change after launch 
+    // even when DarkMode is enabled. So we use a mac style standardPalette to determine
+    // if a drak vs light mode transition has been made and then use it to set the 
+    // Application palette
+    QPalette app_palette = m_Style->standardPalette();
+    bool isdark = app_palette.color(QPalette::Active,QPalette::WindowText).lightness() > 128;
+    if (m_isDark != isdark) {
+        qDebug() << "Theme changed " << "was isDark:" << m_isDark << "now isDark:" << isdark;
+        m_isDark = isdark;
+        setPalette(app_palette);
+        emit applicationPaletteChanged();
+    }
+#endif
 }

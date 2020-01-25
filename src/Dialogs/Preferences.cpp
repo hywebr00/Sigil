@@ -1,7 +1,8 @@
 /************************************************************************
 **
-**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford Ontario Canada
-**  Copyright (C) 2011      John Schember <john@nachtimwald.com>
+**  Copyright (C) 2015-2019  Kevin B. Hendricks, Stratford Ontario Canada
+**  Copyright (C) 2016-2019  Doug Massay
+**  Copyright (C) 2011-2013  John Schember <john@nachtimwald.com>
 **
 **  This file is part of Sigil.
 **
@@ -45,7 +46,8 @@ Preferences::Preferences(QWidget *parent) :
     m_reloadTabs(false),
     m_restartSigil(false),
     m_refreshClipHistoryLimit(false),
-    m_refreshBookBrowser(false)
+    m_refreshBookBrowser(false),
+    m_reloadPreview(false)
 {
     ui.setupUi(this);
     extendUI();
@@ -95,6 +97,8 @@ void Preferences::saveSettings()
                 m_refreshClipHistoryLimit = true;
             } else if (widgetResult == PreferencesWidget::ResultAction_RefreshBookBrowser) {
                 m_refreshBookBrowser = true;
+            } else if (widgetResult == PreferencesWidget::ResultAction_ReloadPreview) {
+                m_reloadPreview = true;
             }
         }
     }
@@ -169,6 +173,11 @@ bool Preferences::isRefreshClipHistoryLimitRequired()
 bool Preferences::isRefreshBookBrowserRequired()
 {
     return m_refreshBookBrowser;
+}
+
+bool Preferences::isReloadPreviewRequired()
+{
+    return m_reloadPreview;
 }
 
 void Preferences::openPreferencesLocation()

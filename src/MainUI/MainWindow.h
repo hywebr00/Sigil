@@ -57,6 +57,7 @@ class QLabel;
 class QSignalMapper;
 class QSlider;
 class QTimer;
+class QActionGroup;
 class FindReplace;
 class TabManager;
 class BookBrowser;
@@ -107,6 +108,8 @@ public:
 	       QWidget *parent = 0, 
 	       Qt::WindowFlags flags = 0);
     ~MainWindow();
+
+    void maybe_fixup_dockwidget_geometry(QDockWidget * widget);
 
     // returns true if MainWindow is Maximized or is FullScreen
     bool isMaxOrFull();
@@ -365,6 +368,8 @@ private slots:
      */
     void ApplicationFocusChanged(QWidget *old, QWidget *now);
 
+    void ApplicationPaletteChanged();
+
     /** 
      *  Quick Launch Plugins via icon button
      */
@@ -616,12 +621,12 @@ private slots:
     void EditTOCDialog();
     void CreateHTMLTOC();
 
-    void ChangeCasing(int casing_mode);
+    void ChangeCasing(QAction* act);
 
     void MarkSelection();
     void ClearMarkedText(ContentTab *old_tab = NULL);
 
-    void ApplyHeadingStyleToTab(const QString &heading_type);
+    void ApplyHeadingStyleToTab(QAction* act);
     void SetPreserveHeadingAttributes(bool new_state);
 
 	void updatePalette();
@@ -788,6 +793,11 @@ private:
     void PlatformSpecificTweaks();
 
     /**
+     * Tweak default UI fonts based on the OS platform.
+     */
+    void SetupUiFonts();
+
+    /**
      * Extends the UI with extra widgets and tweaks.
      * Qt Designer is not able to create all the widgets
      * we want in the MainWindow, so we use this function
@@ -952,8 +962,7 @@ private:
     /**
      * Collects signals and sends specific parameters to the connected slots.
      */
-    QSignalMapper *m_headingMapper;
-    QSignalMapper *m_casingChangeMapper;
+    QActionGroup *m_casingChangeGroup;
 
     /**
      * The Search Manager dialog
@@ -1020,6 +1029,12 @@ private:
     bool m_IsClosing;
 	QColorDialog *m_cd;
     QList<QAction*> m_qlactions;
+
+    /**
+     * Collects signals and sends specific parameters to the connected slots.
+     */
+    QActionGroup *m_headingActionGroup;
+
     /**
      * Holds all the widgets Qt Designer created for us.
      */

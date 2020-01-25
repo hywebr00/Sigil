@@ -62,8 +62,18 @@ XHTMLHighlighter::XHTMLHighlighter(bool checkSpelling, QObject *parent)
       m_checkSpelling(checkSpelling)
 
 {
+    SetRules();
+}
+
+void XHTMLHighlighter::SetRules()
+{
     SettingsStore settings;
-    m_codeViewAppearance = settings.codeViewAppearance();
+    if (Utility::IsDarkMode()) {
+        m_codeViewAppearance = settings.codeViewDarkAppearance();
+    } else {
+        m_codeViewAppearance = settings.codeViewAppearance();
+    }
+
     QTextCharFormat html_format;
     QTextCharFormat doctype_format;
     QTextCharFormat html_comment_format;
@@ -130,7 +140,6 @@ XHTMLHighlighter::XHTMLHighlighter(bool checkSpelling, QObject *parent)
     m_Rules[ "SPECIAL_SPACE_BEGIN" ] = rule;
 }
 
-
 // Overrides the function from QSyntaxHighlighter;
 // gets called by QTextEditor whenever
 // a block (line of text) needs to be repainted
@@ -167,6 +176,13 @@ void XHTMLHighlighter::highlightBlock(const QString &text)
     HighlightLine(text, State_CSSComment);
     HighlightLine(text, State_HTMLComment);
     HighlightLine(text, State_DOCTYPE);
+}
+
+
+void XHTMLHighlighter::rehighlight()
+{
+    SetRules();
+    QSyntaxHighlighter::rehighlight();
 }
 
 

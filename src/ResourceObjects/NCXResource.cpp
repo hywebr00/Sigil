@@ -163,15 +163,22 @@ void NCXResource::GenerateNCXFromTOCEntries(const Book *book, TOCModel::TOCEntry
 
 void NCXResource::FillWithDefaultText(const QString &version, const QString &default_text_folder)
 {
+    QString first_section_bookpath = FIRST_SECTION_NAME;
+    if (!default_text_folder.isEmpty()) first_section_bookpath = default_text_folder + "/" + FIRST_SECTION_NAME;
+    FillWithDefaultTextToBookPath(version, first_section_bookpath);
+    SaveToDisk();
+}
+
+
+void NCXResource::FillWithDefaultTextToBookPath(const QString &version, const QString &start_bookpath)
+{
     QString epubversion = version;
     if (epubversion.isEmpty()) {
         SettingsStore ss;
         epubversion = ss.defaultVersion();
     }
     QString ncxbookpath = GetRelativePath();
-    QString first_section_bookpath = FIRST_SECTION_NAME;
-    if (!default_text_folder.isEmpty()) first_section_bookpath = default_text_folder + "/" + FIRST_SECTION_NAME;
-    QString texthref = Utility::URLEncodePath(Utility::buildRelativePath(ncxbookpath, first_section_bookpath));
+    QString texthref = Utility::URLEncodePath(Utility::buildRelativePath(ncxbookpath, start_bookpath));
     if (epubversion.startsWith('2')) {
         SetText(TEMPLATE_TEXT.arg(tr("Start")).arg(texthref));
     } else {

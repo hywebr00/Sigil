@@ -1,6 +1,6 @@
 /************************************************************************
 **
-**  Copyright (C) 2015-2019 Kevin B, Hendricks, Stratford Ontario Canada
+**  Copyright (C) 2015-2020 Kevin B, Hendricks, Stratford Ontario Canada
 **  Copyright (C) 2012-2013 John Schember <john@nachtimwald.com>
 **  Copyright (C) 2012-2013 Dave Heiland
 **
@@ -22,6 +22,7 @@
 *************************************************************************/
 
 #include <QApplication>
+#include <QGuiApplication>
 #include <QtCore/QFileInfo>
 #include <QEventLoop>
 #include <QImage>
@@ -50,6 +51,7 @@ const QString IMAGE_HTML_BASE_PREVIEW =
     "body { -webkit-user-select: none; }"
     "img { display: block; margin-left: auto; margin-right: auto; border-style: solid; border-width: 1px; max-width: 95%; max-height: 95%}"
     "</style>"
+    "</head>"
     "<body>"
     "<div><img src=\"%1\" /></div>"
     "</body>"
@@ -68,7 +70,7 @@ SelectFiles::SelectFiles(QString title, QList<Resource *> media_resources, QStri
 {
     ui.setupUi(this);
     setWindowTitle(title);
-
+    m_WebView->page()->setBackgroundColor(Utility::WebViewBackgroundColor());
     m_WebView->setContextMenuPolicy(Qt::NoContextMenu);
     m_WebView->setFocusPolicy(Qt::NoFocus);
     m_WebView->setAcceptDrops(false);
@@ -301,6 +303,10 @@ void SelectFiles::SetPreviewImage()
         // MainWindow::clearMemoryCaches();
         const QUrl resourceUrl = QUrl::fromLocalFile(path);
         QString html = IMAGE_HTML_BASE_PREVIEW.arg(resourceUrl.toString());
+	if (Utility::IsDarkMode()) {
+            html = Utility::AddDarkCSS(html);
+	}
+        m_WebView->page()->setBackgroundColor(Utility::WebViewBackgroundColor());
         m_PreviewLoaded = false;
         m_WebView->setHtml(html, resourceUrl);
         loading_resources = true;
@@ -312,6 +318,11 @@ void SelectFiles::SetPreviewImage()
         MainWindow::clearMemoryCaches();
         html = VIDEO_HTML_BASE.arg(resourceUrl.toString());
         m_PreviewLoaded = false;
+	if (Utility::IsDarkMode()) {
+            html = Utility::AddDarkCSS(html);
+	}
+        m_WebView->page()->setBackgroundColor(Utility::WebViewBackgroundColor());
+        m_PreviewLoaded = false;
         m_WebView->setHtml(html, resourceUrl);
         loading_resources = true;
         details = QString("%1 MB").arg(fmbsize);
@@ -320,6 +331,10 @@ void SelectFiles::SetPreviewImage()
         const QUrl resourceUrl = QUrl::fromLocalFile(path);
         // MainWindow::clearMemoryCaches();
         html = AUDIO_HTML_BASE.arg(resourceUrl.toString());
+	if (Utility::IsDarkMode()) {
+            html = Utility::AddDarkCSS(html);
+	}
+        m_WebView->page()->setBackgroundColor(Utility::WebViewBackgroundColor());
         m_PreviewLoaded = false;
         m_WebView->setHtml(html, resourceUrl);
         loading_resources = true;

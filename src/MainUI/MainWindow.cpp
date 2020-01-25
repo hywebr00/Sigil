@@ -24,7 +24,6 @@
 *************************************************************************/
 
 #include <QtCore/QFileInfo>
-#include <QtCore/QSignalMapper>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtConcurrent>
@@ -48,6 +47,8 @@
 #include <QFontMetrics>
 #include <QEvent>
 #include <QWindowStateChangeEvent>
+#include <QStyleFactory>
+#include <QStyle>
 #include <QDebug>
 #include <QColorDialog>
 
@@ -180,8 +181,8 @@ MainWindow::MainWindow(const QString &openfilepath,
     m_lbZoomLabel(NULL),
     c_SaveFilters(GetSaveFiltersMap()),
     c_LoadFilters(GetLoadFiltersMap()),
-    m_headingMapper(new QSignalMapper(this)),
-    m_casingChangeMapper(new QSignalMapper(this)),
+    m_headingActionGroup(new QActionGroup(this)),
+    m_casingChangeGroup(new QActionGroup(this)),
     m_SearchEditor(new SearchEditor(this)),
     m_ClipEditor(new ClipEditor(this)),
     m_IndexEditor(new IndexEditor(this)),
@@ -256,8 +257,8 @@ MainWindow::~MainWindow()
     if (m_IndexEditor) delete m_IndexEditor;
     if (m_ClipEditor) delete m_ClipEditor;
     if (m_SearchEditor) delete m_SearchEditor;
-    if (m_casingChangeMapper) delete m_casingChangeMapper;
-    if (m_headingMapper) delete m_headingMapper;
+    if (m_casingChangeGroup) delete m_casingChangeGroup;
+    if (m_headingActionGroup) delete m_headingActionGroup;
     if (m_lbZoomLabel) delete m_lbZoomLabel;
     if (m_slZoomSlider) delete m_slZoomSlider;
     if (m_ValidationResultsView) delete m_ValidationResultsView;
@@ -270,6 +271,27 @@ MainWindow::~MainWindow()
 #endif
 
 }
+
+void MainWindow::maybe_fixup_dockwidget_geometry(QDockWidget* dw) 
+{
+    QRect screen_rect = qApp->desktop()->availableGeometry(dw);
+    qDebug() << "dockwidget screen: " << screen_rect;
+    qDebug() << "dockwidget widget: " << dw->geometry() << dw->isFloating();
+    qDebug() << "mainwindow screen: " << qApp->desktop()->availableGeometry(this);
+    if (dw->isFloating()) {
+        if (!dw->geometry().intersects(screen_rect)) {
+            qDebug() << "on a no longer available screen";
+#if 0
+            // shrink it to fit the current screen and move it here
+            int w = std::min(dw->width(), screen_rect.width() - 10);
+	    int h = std::min(dw->height(), screen_rect.height() - 10);
+	    dw->resize(w, h);
+	    dw->move((screen_rect.width() - w)/2, (screen_rect.height() - h)/2);
+#endif
+	}
+    }
+}
+
 
 // Note on Mac OS X you may only add a QMenu or SubMenu to the MenuBar Once!
 // Actions can be removed
@@ -2015,7 +2037,7 @@ void MainWindow::ReportsDialog()
         return;
     }
 
-    qDebug() << "Creating All of the Reports";
+    DBG qDebug() << "Creating All of the Reports";
     m_Reports->CreateReports(m_Book);
     
     QApplication::restoreOverrideCursor();
@@ -2292,16 +2314,11 @@ void MainWindow::InsertFilesFromDisk()
     // We must disconnect the ResourcesAdded signal to avoid LoadTabContent being called
     // which results in the inserted image being cleared from the BV page immediately.
     disconnect(m_BookBrowser, SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeletedOrMoved()));
-    QStringList filenames = m_BookBrowser->AddExisting(true);
+    QStringList bookpaths = m_BookBrowser->AddExisting(true);
     connect(m_BookBrowser, SIGNAL(ResourcesAdded()), this, SLOT(ResourcesAddedOrDeletedOrMoved()));
     // Since we disconnected the signal we will have missed forced clearing of cache
     MainWindow::clearMemoryCaches();
-    QStringList internal_filenames;
-    foreach(QString filename, filenames) {
-        QString internal_filename = filename.right(filename.length() - filename.lastIndexOf("/") - 1);
-        internal_filenames.append(internal_filename);
-    }
-    InsertFiles(internal_filenames);
+    InsertFiles(bookpaths);
 }
 
 void MainWindow::InsertSpecialCharacter()
@@ -2402,6 +2419,14 @@ void MainWindow::MarkForIndex()
             QMessageBox::warning(this, tr("Sigil"), tr("You cannot mark an index at this position."));
         }
     }
+}
+
+void MainWindow::ApplicationPaletteChanged()
+{
+    // we need to force a full reload of all Tabs and Preview Window
+    qDebug() << "ApplicationPaletteChanged";
+    m_TabManager->ReopenTabs();
+    UpdatePreview();
 }
 
 void MainWindow::ApplicationFocusChanged(QWidget *old, QWidget *now)
@@ -3090,7 +3115,7 @@ void MainWindow::CreateHTMLTOC()
 }
 
 
-void MainWindow::ChangeCasing(int casing_mode)
+void MainWindow::ChangeCasing(QAction* act)
 {
     ContentTab *tab = GetCurrentContentTab();
 
@@ -3098,31 +3123,20 @@ void MainWindow::ChangeCasing(int casing_mode)
         return;
     }
 
+    QString name = act->objectName();
     Utility::Casing casing;
 
-    switch (casing_mode) {
-        case Utility::Casing_Lowercase: {
-            casing = Utility::Casing_Lowercase;
-            break;
-        }
-
-        case Utility::Casing_Uppercase: {
-            casing = Utility::Casing_Uppercase;
-            break;
-        }
-
-        case Utility::Casing_Titlecase: {
-            casing = Utility::Casing_Titlecase;
-            break;
-        }
-
-        case Utility::Casing_Capitalize: {
-            casing = Utility::Casing_Capitalize;
-            break;
-        }
-
-        default:
-            return;
+    if (name.contains("lowercase", Qt::CaseInsensitive)) {
+        casing = Utility::Casing_Lowercase;
+    }
+    if (name.contains("uppercase", Qt::CaseInsensitive)) {
+        casing = Utility::Casing_Uppercase;
+    }
+    if (name.contains("titlecase", Qt::CaseInsensitive)) {
+        casing = Utility::Casing_Titlecase;
+    }
+    if (name.contains("capitalize", Qt::CaseInsensitive)) {
+        casing = Utility::Casing_Capitalize;
     }
 
     tab->ChangeCasing(casing);
@@ -3263,6 +3277,11 @@ void MainWindow::PreferencesDialog()
         SettingsStore settings;
         m_ClipboardHistoryLimit = settings.clipboardHistoryLimit();
     }
+    if (prefers.isReloadPreviewRequired()) {
+        if (m_PreviewWindow) {
+            UpdatePreview();
+        }
+    }
 
     if (m_SelectCharacter->isVisible()) {
         // To ensure any font size changes are immediately applied.
@@ -3350,6 +3369,8 @@ void MainWindow::ValidateStylesheetsWithW3C()
 
 void MainWindow::ChangeSignalsWhenTabChanges(ContentTab *old_tab, ContentTab *new_tab)
 {
+    qDebug() << "in ChangesSignalWhenTabChanges " << old_tab << new_tab;
+    if (old_tab == new_tab) return;
     BreakTabConnections(old_tab);
     MakeTabConnections(new_tab);
     // Clear selection if the tab changed.
@@ -4785,9 +4806,17 @@ void MainWindow::SelectEntryOnHeadingToolbar(const QString &element_name)
     }
 }
 
-void MainWindow::ApplyHeadingStyleToTab(const QString &heading_type)
+void MainWindow::ApplyHeadingStyleToTab(QAction* act)
 {
     FlowTab *flow_tab = GetCurrentFlowTab();
+
+    QString heading_type;
+    QString name = act->objectName();
+    if (name == "actionHeadingNormal") {
+        heading_type = "Normal";
+    } else {
+        heading_type = name[ name.count() - 1 ];
+    }
 
     if (flow_tab) {
         flow_tab->HeadingStyle(heading_type, m_preserveHeadingAttributes);
@@ -4883,6 +4912,28 @@ void MainWindow::PlatformSpecificTweaks()
 }
 
 
+void MainWindow::SetupUiFonts()
+{
+    QFont f = QFont(qApp->font());
+#ifdef Q_OS_WIN32
+    if (f.family() == "MS Shell Dlg 2" && f.pointSize() == 8) {
+        // Microsoft's recommended UI defaults
+        f.setFamily("Segoe UI");
+        f.setPointSize(9);
+        qApp->setFont(f);
+    }
+#elif defined(Q_OS_MAC)
+    // Just in case
+#else
+    if ((f.family() == "Sans Serif" || f.family() == "Sans") && f.pointSize() == 9) {
+        f.setPointSize(10);
+        qApp->setFont(f);
+    }
+   
+#endif
+}
+
+
 void MainWindow::ExtendUI()
 {
     // initialize list of quick launch plugin actions
@@ -4897,6 +4948,20 @@ void MainWindow::ExtendUI()
     m_qlactions.append(ui.actionPlugin9);
     m_qlactions.append(ui.actionPlugin10);
 
+    // initialize action group from tbHeadings QToolButton actions
+    foreach(QAction* ha, ui.tbHeadings->actions()) {
+        if (!ha->isSeparator()) {
+            m_headingActionGroup->addAction(ha);
+        }
+    }
+
+    // initialize action group from tbCase QToolButton actions
+    foreach(QAction* ca, ui.tbCase->actions()) {
+        if (!ca->isSeparator()) {
+            m_casingChangeGroup->addAction(ca);
+        }
+    }
+
     m_FindReplace->ShowHide();
     // We want a nice frame around the tab manager
     QFrame *frame = new QFrame(this);
@@ -4909,7 +4974,7 @@ void MainWindow::ExtendUI()
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(1);
     frame->setObjectName(FRAME_NAME);
-    frame->setStyleSheet(TAB_STYLE_SHEET);
+    //frame->setStyleSheet(TAB_STYLE_SHEET);
     setCentralWidget(frame);
     m_BookBrowser = new BookBrowser(this);
     m_BookBrowser->setObjectName(BOOK_BROWSER_NAME);
@@ -5189,8 +5254,13 @@ void MainWindow::ExtendUI()
     ui.tbCase->setFont(font);
 #endif
 
+    SetupUiFonts();
     ExtendIconSizes();
     UpdateClipsUI();
+
+    QFont f = QFont(qApp->font());
+    qDebug() << "UI Font family: " << f.family();    
+    qDebug() << "UI Font size: " << f.pointSize();
 }
 
 void MainWindow::UpdateClipButton(int clip_number, QAction *ui_action)
@@ -5609,6 +5679,31 @@ void MainWindow::changeEvent(QEvent *e)
                 if (!m_LastState.isEmpty()) {
                     restoreState(m_LastState);
 		}
+
+                int numscreens = qApp->desktop()->numScreens();
+		for (int i = 0; i < numscreens; i++) {
+                    qDebug() << "Screen: " << i;
+		    qDebug() << "    screen  geo: " << qApp->desktop()->screenGeometry(i);
+                    QScreen *srn = QApplication::screens().at(i);
+		    qDebug() << "    avail   geo: " << srn->availableGeometry();
+		    qDebug() << "    geo        : " << srn->geometry();
+                    qDebug() << "    devideRatio: " << srn->devicePixelRatio();
+                    qDebug() << "    logical dpi: " << srn->logicalDotsPerInchX() << srn->logicalDotsPerInchY();
+                    qDebug() << "    physic  dpi: " << srn->physicalDotsPerInchX() << srn->physicalDotsPerInchY();
+		}
+
+                // restoreState properly handles moving floating Preview Window
+                // back to main screen if needed but keeps it hidden, only need to 
+                // use View to display it, at least on macOSX
+
+                // So only Use this to dump screen debug data now (no actual fixup is currently done)
+                // Handle Dock Widgets not being restored to correct screen
+                // See https://bugreports.qt.io/browse/QTBUG-77385
+                maybe_fixup_dockwidget_geometry(m_BookBrowser);
+                maybe_fixup_dockwidget_geometry(m_TableOfContents);
+                maybe_fixup_dockwidget_geometry(m_ValidationResultsView);
+                maybe_fixup_dockwidget_geometry(m_PreviewWindow);
+
 	    }
             m_FirstTime = false;
 
@@ -5642,6 +5737,7 @@ void MainWindow::ConnectSignalsToSlots()
     connect(m_PreviewWindow, SIGNAL(OpenUrlRequest(const QUrl &)), this, SLOT(OpenUrl(const QUrl &)));
     connect(m_PreviewWindow, SIGNAL(ScrollToFragmentRequest(const QString &)), this, SLOT(ScrollCVToFragment(const QString &)));
     connect(qApp, SIGNAL(focusChanged(QWidget *, QWidget *)), this, SLOT(ApplicationFocusChanged(QWidget *, QWidget *)));
+
     // Setup signal mapping for heading actions.
     connect(ui.actionHeading1, SIGNAL(triggered()), m_headingMapper, SLOT(map()));
     m_headingMapper->setMapping(ui.actionHeading1, "1");
@@ -5658,6 +5754,11 @@ void MainWindow::ConnectSignalsToSlots()
     connect(ui.actionHeadingNormal, SIGNAL(triggered()), m_headingMapper, SLOT(map()));
     m_headingMapper->setMapping(ui.actionHeadingNormal, "Normal");
 	connect(ui.actionColorDialog, SIGNAL(triggered()), this, SLOT(updatePalette()));
+
+    MainApplication *mainApplication = qobject_cast<MainApplication *>(qApp);
+    connect(mainApplication, SIGNAL(applicationPaletteChanged()), this, SLOT(ApplicationPaletteChanged()));
+
+
     // File
     connect(ui.actionNew,           SIGNAL(triggered()), this, SLOT(NewDefault()));
     connect(ui.actionNewEpub2,      SIGNAL(triggered()), this, SLOT(NewEpub2()));
@@ -5728,21 +5829,13 @@ void MainWindow::ConnectSignalsToSlots()
     connect(ui.actionDeleteUnusedMedia,    SIGNAL(triggered()), this, SLOT(DeleteUnusedMedia()));
     connect(ui.actionDeleteUnusedStyles,    SIGNAL(triggered()), this, SLOT(DeleteUnusedStyles()));
     // Change case
-    connect(ui.actionCasingLowercase,  SIGNAL(triggered()), m_casingChangeMapper, SLOT(map()));
-    connect(ui.actionCasingUppercase,  SIGNAL(triggered()), m_casingChangeMapper, SLOT(map()));
-    connect(ui.actionCasingTitlecase, SIGNAL(triggered()), m_casingChangeMapper, SLOT(map()));
-    connect(ui.actionCasingCapitalize, SIGNAL(triggered()), m_casingChangeMapper, SLOT(map()));
-    m_casingChangeMapper->setMapping(ui.actionCasingLowercase,  Utility::Casing_Lowercase);
-    m_casingChangeMapper->setMapping(ui.actionCasingUppercase,  Utility::Casing_Uppercase);
-    m_casingChangeMapper->setMapping(ui.actionCasingTitlecase, Utility::Casing_Titlecase);
-    m_casingChangeMapper->setMapping(ui.actionCasingCapitalize, Utility::Casing_Capitalize);
-    connect(m_casingChangeMapper, SIGNAL(mapped(int)), this, SLOT(ChangeCasing(int)));
+    connect(m_casingChangeGroup,    SIGNAL(triggered(QAction*)), this, SLOT(ChangeCasing(QAction*)));
     // View
     connect(ui.actionZoomIn,        SIGNAL(triggered()), this, SLOT(ZoomIn()));
     connect(ui.actionZoomOut,       SIGNAL(triggered()), this, SLOT(ZoomOut()));
     connect(ui.actionZoomReset,     SIGNAL(triggered()), this, SLOT(ZoomReset()));
     connect(ui.actionHeadingPreserveAttributes, SIGNAL(triggered(bool)), this, SLOT(SetPreserveHeadingAttributes(bool)));
-    connect(m_headingMapper,      SIGNAL(mapped(const QString &)),  this,   SLOT(ApplyHeadingStyleToTab(const QString &)));
+    connect(m_headingActionGroup,   SIGNAL(triggered(QAction*)), this, SLOT(ApplyHeadingStyleToTab(QAction*)));
     // Window
     connect(ui.actionNextTab,       SIGNAL(triggered()), m_TabManager, SLOT(NextTab()));
     connect(ui.actionPreviousTab,   SIGNAL(triggered()), m_TabManager, SLOT(PreviousTab()));

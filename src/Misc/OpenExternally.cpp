@@ -27,6 +27,7 @@
 #endif
 #include <QtCore/QStandardPaths>
 #include <QtWidgets/QFileDialog>
+#include <QWidget>
 #include <QDebug>
 
 #include "Dialogs/OpenWithName.h"
@@ -209,7 +210,7 @@ const QString OpenExternally::prettyApplicationName(const QString &applicationpa
     return QFileInfo(applicationpath).completeBaseName();
 }
 
-const QString OpenExternally::selectEditorForResourceType(const Resource::ResourceType type)
+const QString OpenExternally::selectEditorForResourceType(const Resource::ResourceType type, QWidget *parent)
 {
     if (!mayOpen(type)) {
         return EMPTY;
@@ -249,12 +250,15 @@ const QString OpenExternally::selectEditorForResourceType(const Resource::Resour
                                        + " (*)"
 #endif
                                        ;
-    QFileDialog::Options options = QFileDialog::Options() | QFileDialog::ReadOnly | QFileDialog::HideNameFilterDetails;
 #ifdef Q_OS_MAC
-    options = options | QFileDialog::DontUseNativeDialog;
+    QFileDialog::Options options = QFileDialog::Options() | QFileDialog::ReadOnly;
+#else
+    QFileDialog::Options options = QFileDialog::Options() | QFileDialog::ReadOnly | QFileDialog::HideNameFilterDetails;
 #endif
 
-    const QString selectedFile = QFileDialog::getOpenFileName(0,
+    // Qt Bug, must use native FileDialog here otherwise treats .app as normal directory
+
+    const QString selectedFile = QFileDialog::getOpenFileName(parent,
                                  QObject::tr("Open With"),
                                  last_editor,
                                  NAME_FILTER,

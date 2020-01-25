@@ -1,7 +1,8 @@
 /************************************************************************
 **
-**  Copyright (C) 2015-2019 Kevin B. Hendricks, Stratford Ontario Canada
-**  Copyright (C) 2011      John Schember <john@nachtimwald.com>
+**  Copyright (C) 2015-2019  Kevin B. Hendricks, Stratford Ontario Canada
+**  Copyright (C) 2016-2019  Doug Massay
+**  Copyright (C) 2011-2013  John Schember <john@nachtimwald.com>
 **
 **  This file is part of Sigil.
 **
@@ -74,6 +75,10 @@ public:
      * Check this after dialog closes to determine if BookBrowser needs to be refeshed
      */
     bool isRefreshBookBrowserRequired();
+    /**
+     * Check this after dialog closes to determine if Preview page needs to be reloaded
+     */
+    bool isReloadPreviewRequired();
 
     void makeActive(int);
 
@@ -121,6 +126,7 @@ private:
     bool m_restartSigil;
     bool m_refreshClipHistoryLimit;
     bool m_refreshBookBrowser;
+    bool m_reloadPreview;
 
     Ui::Preferences ui;
 };

@@ -1,7 +1,7 @@
 /************************************************************************
 **
-**  Copyright (C) 2019 Kevin B. Hendricks
-**  Copyright (C) 2013 Dave Heiland
+**  Copyright (C) 2019-2020 Kevin B. Hendricks
+**  Copyright (C) 2013      Dave Heiland
 **
 **  This file is part of Sigil.
 **
@@ -21,6 +21,8 @@
 *************************************************************************/
 
 #include <QtCore/QFileInfo>
+#include <QApplication>
+#include <QGuiApplication>
 #include <QtWidgets/QLayout>
 #include <QtWebEngineWidgets/QWebEngineView>
 #include <QtWebEngineWidgets/QWebEngineSettings>
@@ -29,6 +31,7 @@
 #include "MainUI/MainWindow.h"
 #include "Dialogs/ViewImage.h"
 #include "ResourceObjects/ImageResource.h"
+#include "Misc/Utility.h"
 #include "sigil_constants.h"
 
 static QString SETTINGS_GROUP = "view_image";
@@ -38,6 +41,7 @@ ViewImage::ViewImage(QWidget *parent)
     QDialog(parent)
 {
     ui.setupUi(this);
+    ui.webView->page()->setBackgroundColor(Utility::WebViewBackgroundColor());
     ui.webView->setContextMenuPolicy(Qt::NoContextMenu);
     ui.webView->setFocusPolicy(Qt::NoFocus);
     ui.webView->setAcceptDrops(false);
@@ -57,8 +61,12 @@ void ViewImage::ShowImage(QString path)
 {
     ui.webView->page()->profile()->clearHttpCache();
     const QUrl resourceUrl = QUrl::fromLocalFile(path);
-    const QString imagehtml = IMAGE_HTML_BASE_PREVIEW.arg(resourceUrl.toString());
-    ui.webView->setHtml(imagehtml, resourceUrl);
+    QString html = IMAGE_HTML_BASE_PREVIEW.arg(resourceUrl.toString());
+    if (Utility::IsDarkMode()) {
+	html = Utility::AddDarkCSS(html);
+    }
+    ui.webView->page()->setBackgroundColor(Utility::WebViewBackgroundColor());
+    ui.webView->setHtml(html, resourceUrl);
     QApplication::processEvents();
 }
 

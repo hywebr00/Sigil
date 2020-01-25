@@ -63,6 +63,19 @@
 #include "Misc/QCodePage437Codec.h"
 #include "Misc/SettingsStore.h"
 #include "Misc/SleepFunctions.h"
+#include "MainUI/MainApplication.h"
+
+static const QString DARK_STYLE =
+    "<style>\n"
+    "  :root { background-color: %1; color: %2; }\n"
+    "  a:link { color: #ff9999; }\n"
+    "  a:visited { color: #99ff99; }\n"
+    "</style>\n"
+    "<link rel=\"stylesheet\" type=\"text/css\" href=\"%3\" />\n";
+
+static const QString DARK_STYLESHEET =
+    "<link rel=\"stylesheet\" type=\"text/css\" href=\"%1\" />";
+
 
 #ifndef MAX_PATH
 // Set Max length to 256 because that's the max path size on many systems.
@@ -106,6 +119,39 @@ QString Utility::DefinePrefsDir()
     }
 }
 
+bool Utility::IsDarkMode()
+{
+#ifdef Q_OS_MAC
+    MainApplication *mainApplication = qobject_cast<MainApplication *>(qApp);
+    return mainApplication->isDarkMode();
+#else
+    // Windows, Linux and Other platforms
+    QPalette app_palette = qApp->palette();
+    bool isdark = app_palette.color(QPalette::Active,QPalette::WindowText).lightness() > 128;
+    return isdark;
+#endif
+}
+
+bool Utility::IsWindowsSysDarkMode()
+{
+    QSettings s("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", QSettings::NativeFormat);
+    if (s.status() == QSettings::NoError) {
+        qDebug() << "Registry Value = " << s.value("AppsUseLightTheme");
+        return s.value("AppsUseLightTheme") == 0;
+    }
+    return false;
+}
+
+bool Utility::WindowsShouldUseDarkMode()
+{
+    QString override(GetEnvironmentVar("SIGIL_USES_DARK_MODE"));
+    if (override.isEmpty()) {
+        //Env var unset - use system registry setting.
+        return IsWindowsSysDarkMode();
+    }
+    // Otherwise use the env var: anything other than "0" is true.
+    return (override == "0" ? false : true);
+}
 
 #if !defined(Q_OS_WIN32) && !defined(Q_OS_MAC)
 // Return correct path(s) for Linux hunspell dictionaries
@@ -682,6 +728,7 @@ QString Utility::getSpellingSafeText(const QString &raw_text)
     // Hunspell dictionaries typically store their main wordlist using
     // the dumb apostrophe variants only to save space and speed checking
     QString text(raw_text);
+    text.replace(QChar(0x00ad),"");
     return text.replace(QChar(0x2019),QChar(0x27));
 }
 
@@ -1126,4 +1173,61 @@ QStringList Utility::LocaleAwareSort(QStringList &names)
   // use uiCollator.compare(s1, s2)
   std::sort(names.begin(), names.end(), uiCollator);
   return names;
+}
+
+
+QString Utility::AddDarkCSS(const QString &html)
+{
+    QString text = html;
+    int endheadpos = text.indexOf("</head>");
+    if (endheadpos == -1) return text;
+    QPalette pal = qApp->palette();
+    QString back = pal.color(QPalette::Base).name();
+    QString fore = pal.color(QPalette::Text).name();
+#ifdef Q_OS_MAC
+    // on macOS the Base role is used for the background not the Window role
+    QString dark_css_url = "qrc:///dark/mac_dark_scrollbar.css";
+#elif defined(Q_OS_WIN32)
+    QString dark_css_url = "qrc:///dark/win_dark_scrollbar.css";
+#else
+    // Linux Temporary
+    QString dark_css_url = "qrc:///dark/win_dark_scrollbar.css";
+#endif
+    QString inject_dark_style = DARK_STYLE.arg(back).arg(fore).arg(dark_css_url);
+    // qDebug() << "Injecting dark style: ";
+    text.insert(endheadpos, inject_dark_style);
+    return text;
+}
+
+QString Utility::AddDarkStyleSheet(const QString &html)
+{
+    QString text = html;
+    int endheadpos = text.indexOf("</head>");
+    if (endheadpos == -1) return text;
+#ifdef Q_OS_MAC
+    QString dark_css_url = "qrc:///dark/mac_dark_scrollbar.css";
+#elif defined(Q_OS_WIN32)
+    QString dark_css_url = "qrc:///dark/win_dark_scrollbar.css";
+#else
+    QString dark_css_url = "qrc:///dark/win_dark_scrollbar.css";
+#endif
+    QString inject_dark_style = DARK_STYLESHEET.arg(dark_css_url);
+    text.insert(endheadpos, inject_dark_style);
+    return text;
+}
+
+QColor Utility::WebViewBackgroundColor(bool followpref)
+{
+    QColor back_color = Qt::white;
+    if (IsDarkMode()) {
+        if (followpref) {
+            SettingsStore ss;
+            if (!ss.previewDark()) {
+                return back_color;    
+            }
+        }
+        QPalette pal = qApp->palette();
+        back_color = pal.color(QPalette::Base);
+    }
+    return back_color; 
 }

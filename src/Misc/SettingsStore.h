@@ -75,6 +75,7 @@ public:
     float zoomText();
     float zoomWeb();
     float zoomPreview();
+    float zoomInspector();
 
     /**
      * The name of the dictionary to use for spell check.
@@ -139,6 +140,8 @@ public:
 
     int showFullPathOn();
 
+    int previewDark();
+
     int cleanOn();
 
     QStringList pluginMap();
@@ -161,12 +164,6 @@ public:
     struct CodeViewAppearance {
         QString font_family;
         int font_size;
-
-        QColor background_color;
-        QColor foreground_color;
-
-        QColor selection_background_color;
-        QColor selection_foreground_color;
 
         QColor css_comment_color;
         QColor css_property_color;
@@ -213,6 +210,9 @@ public:
      * The appearance settings to use for editing in Code View.
      */
     CodeViewAppearance codeViewAppearance();
+
+    CodeViewAppearance codeViewDarkAppearance();
+
 
     /**
      * The appearance settings to use for editing in Code View.
@@ -264,6 +264,7 @@ public slots:
     void setZoomText(float zoom);
     void setZoomWeb(float zoom);
     void setZoomPreview(float zoom);
+    void setZoomInspector(float zoom);
 
     /**
      * Set the name of the dictionary the user has selected.
@@ -329,6 +330,8 @@ public slots:
 
     void setShowFullPathOn(int on);
 
+    void setPreviewDark(int enabled);
+
     void setCleanOn(int on);
 
     void setPluginMap(const QStringList & map);
@@ -348,6 +351,8 @@ public slots:
      * Set the appearance settings to use for editing in Code View
      */
     void setCodeViewAppearance(const CodeViewAppearance &code_view_appearance);
+
+    void setCodeViewDarkAppearance(const CodeViewAppearance &code_view_appearance);
     /**
     * Set the default font settings to use for Special Characters popup window
     */

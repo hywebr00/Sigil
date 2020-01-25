@@ -65,7 +65,7 @@ public:
     int GetTabCount();
 
     void CloseAllTabs(bool all=false);
-    void CloseTabForResource(const Resource *resource);
+    void CloseTabForResource(const Resource *resource, bool force=false);
 
     /**
      * Returns \c true if all open tabs data is well-formed.
@@ -289,6 +289,8 @@ private:
 
     bool m_CheckWellFormedErrors;
 
+    QList<ContentTab*> m_TabsToDelete;
+    bool m_tabs_deletion_in_use;
 };
 
 #endif // TABMANAGER_H

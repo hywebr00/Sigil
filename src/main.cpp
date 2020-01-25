@@ -1,7 +1,8 @@
 /************************************************************************
 **
-**  Copyright (C) 2018-2019 Kevin B. Hendricks, Stratford, Ontario Canada
-**  Copyright (C) 2009-2011 Strahinja Markovic  <strahinja.markovic@gmail.com>
+**  Copyright (C) 2018-2019  Kevin B. Hendricks, Stratford, Ontario Canada
+**  Copyright (C) 2019       Doug Massay
+**  Copyright (C) 2009-2011  Strahinja Markovic  <strahinja.markovic@gmail.com>
 **
 **  This file is part of Sigil.
 **
@@ -26,6 +27,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QLibraryInfo>
+#include <QStyleFactory>
 #include <QtCore/QTextCodec>
 #include <QtCore/QThreadPool>
 #include <QtCore/QTranslator>
@@ -238,6 +240,26 @@ void VerifyPlugins()
 }
 
 
+void setupHiDPI()
+{
+    bool has_env_setting = false;
+    QStringList env_vars;
+    env_vars << "QT_ENABLE_HIGHDPI_SCALING" << "QT_SCALE_FACTOR_ROUNDING_POLICY"
+             << "QT_AUTO_SCREEN_SCALE_FACTOR" << "QT_SCALE_FACTOR"
+             << "QT_SCREEN_SCALE_FACTORS" << "QT_DEVICE_PIXEL_RATIO";
+    foreach(QString v, env_vars) {
+        if (!Utility::GetEnvironmentVar(v).isEmpty()) {
+            has_env_setting = true;
+            break;
+        }
+    }
+    if (!has_env_setting) {
+        qDebug() << "Turning on Automatic High DPI scaling";
+        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    }
+}
+
+
 // Application entry point
 int main(int argc, char *argv[])
 {
@@ -251,12 +273,20 @@ int main(int argc, char *argv[])
     qInstallMessageHandler(MessageHandler);
 #endif
 
+#ifndef Q_OS_MAC
+    setupHiDPI();
+#endif
+
     // Set application information for easier use of QSettings classes
     QCoreApplication::setOrganizationName("sigil-ebook");
     QCoreApplication::setOrganizationDomain("sigil-ebook.com");
     QCoreApplication::setApplicationName("sigil");
     QCoreApplication::setApplicationVersion(SIGIL_VERSION);
-    
+
+#ifndef Q_OS_MAC
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+
     // many qtbugs related to mixing 32 and 64 bit qt apps when shader disk cache is used
     // Only use if using Qt5.9.0 or higher
 #if QT_VERSION >= 0x050900
@@ -338,12 +368,54 @@ int main(int argc, char *argv[])
         }
         app.installTranslator(&sigilTranslator);
 
+#ifdef Q_OS_WIN32
+        // Fusion style is fully dpi aware on Windows
+        app.setStyle(QStyleFactory::create("fusion"));
+        if (Utility::WindowsShouldUseDarkMode()) {
+            // qss stylesheet from resources
+            QString dark_styles = Utility::ReadUnicodeTextFile(":/dark/win-dark-style.qss");
+            app.setStyleSheet(dark_styles);
+
+            // Dark palette for Sigil
+            QPalette darkPalette;
+
+            darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+            darkPalette.setColor(QPalette::Disabled, QPalette::Window, QColor(80, 80, 80));
+            darkPalette.setColor(QPalette::WindowText, Qt::white);
+            darkPalette.setColor(QPalette::Disabled, QPalette::WindowText,
+                                QColor(127, 127, 127));
+            darkPalette.setColor(QPalette::Base, QColor(42, 42, 42));
+            darkPalette.setColor(QPalette::Disabled, QPalette::Base, QColor(80, 80, 80));
+            darkPalette.setColor(QPalette::AlternateBase, QColor(66, 66, 66));
+            darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+            darkPalette.setColor(QPalette::ToolTipText, QColor(53, 53, 53));
+            darkPalette.setColor(QPalette::Text, Qt::white);
+            darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(127, 127, 127));
+            darkPalette.setColor(QPalette::Dark, QColor(35, 35, 35));
+            darkPalette.setColor(QPalette::Shadow, QColor(20, 20, 20));
+            darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+            darkPalette.setColor(QPalette::ButtonText, Qt::white);
+            darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText,
+                                QColor(127, 127, 127));
+            darkPalette.setColor(QPalette::BrightText, Qt::red);
+            darkPalette.setColor(QPalette::Link, QColor(108, 180, 238));
+            darkPalette.setColor(QPalette::LinkVisited, QColor(108, 180, 238));
+            darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+            darkPalette.setColor(QPalette::Disabled, QPalette::Highlight, QColor(80, 80, 80));
+            darkPalette.setColor(QPalette::HighlightedText, Qt::white);
+            darkPalette.setColor(QPalette::Disabled, QPalette::HighlightedText,
+                                QColor(127, 127, 127));
+
+            app.setPalette(darkPalette);
+        }
+#endif
+
         // Check for existing qt_styles.qss in Prefs dir and load it if present
         QString qt_stylesheet_path = Utility::DefinePrefsDir() + "/qt_styles.qss";
         QFileInfo QtStylesheetInfo(qt_stylesheet_path);
         if (QtStylesheetInfo.exists() && QtStylesheetInfo.isFile() && QtStylesheetInfo.isReadable()) {
             QString qtstyles = Utility::ReadUnicodeTextFile(qt_stylesheet_path);
-            app.setStyleSheet(qtstyles);
+            app.setStyleSheet(app.styleSheet().append(qtstyles));
         }
 
         // Qt's setCursorFlashTime(msecs) (or the docs) are broken

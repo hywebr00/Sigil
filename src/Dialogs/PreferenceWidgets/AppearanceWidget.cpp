@@ -1,8 +1,9 @@
 /************************************************************************
 **
-**  Copyright (C) 2019  Kevin B. Hendricks, Stratford Ontario Canada
-**  Copyright (C) 2012  John Schember <john@nachtimwald.com>
-**  Copyright (C) 2012  Grant Drake
+**  Copyright (C) 2016-2019  Kevin B. Hendricks, Stratford, ON
+**  Copyright (C) 2016-2020  Doug Massay
+**  Copyright (C) 2011-2013  John Schember <john@nachtimwald.com>
+**  Copyright (C) 2012-2013  Grant Drake
 **
 **  This file is part of Sigil.
 **
@@ -66,7 +67,7 @@ public:
         }
 
         r = option.rect.adjusted(1, 1, option.rect.height() - option.rect.width(), -2);
-        painter->setPen(Qt::black);
+        painter->setPen(QPalette().text().color());
         painter->setBrush(swatch_color);
         painter->drawRect(r);
     }
@@ -89,6 +90,7 @@ PreferencesWidget::ResultAction AppearanceWidget::saveSettings()
     SettingsStore settings;
     settings.setAppearancePrefsTabIndex(ui.tabAppearance->currentIndex());
     settings.setShowFullPathOn(ui.ShowFullPath->isChecked() ? 1 : 0);
+    settings.setPreviewDark(ui.PreviewDarkInDM->isChecked() ? 1 : 0);
     SettingsStore::PreviewAppearance PVAppearance;
     PVAppearance.font_family_standard     = ui.cbPreviewFontStandard->currentText();
     PVAppearance.font_family_serif        = ui.cbPreviewFontSerif->currentText();
@@ -99,8 +101,6 @@ PreferencesWidget::ResultAction AppearanceWidget::saveSettings()
     codeViewAppearance.font_family = ui.cbCodeViewFont->currentText();
     codeViewAppearance.font_size = ui.codeViewFontSizeSpin->value();
     int i = 0;
-    codeViewAppearance.background_color             = getListItemColor(i++);
-    codeViewAppearance.foreground_color             = getListItemColor(i++);
     codeViewAppearance.css_comment_color            = getListItemColor(i++);
     codeViewAppearance.css_property_color           = getListItemColor(i++);
     codeViewAppearance.css_quote_color              = getListItemColor(i++);
@@ -109,8 +109,6 @@ PreferencesWidget::ResultAction AppearanceWidget::saveSettings()
     codeViewAppearance.line_highlight_color         = getListItemColor(i++);
     codeViewAppearance.line_number_background_color = getListItemColor(i++);
     codeViewAppearance.line_number_foreground_color = getListItemColor(i++);
-    codeViewAppearance.selection_background_color   = getListItemColor(i++);
-    codeViewAppearance.selection_foreground_color   = getListItemColor(i++);
     codeViewAppearance.spelling_underline_color     = getListItemColor(i++);
     codeViewAppearance.xhtml_attribute_name_color   = getListItemColor(i++);
     codeViewAppearance.xhtml_attribute_value_color  = getListItemColor(i++);
@@ -120,7 +118,14 @@ PreferencesWidget::ResultAction AppearanceWidget::saveSettings()
     codeViewAppearance.xhtml_entity_color           = getListItemColor(i++);
     codeViewAppearance.xhtml_html_color             = getListItemColor(i++);
     codeViewAppearance.xhtml_html_comment_color     = getListItemColor(i++);
-    settings.setCodeViewAppearance(codeViewAppearance);
+    // only save CV Appearance if mode was not changed since preference was open
+    if (m_wasDark == Utility::IsDarkMode()) {
+        if (Utility::IsDarkMode()) {
+            settings.setCodeViewDarkAppearance(codeViewAppearance);
+        } else {
+            settings.setCodeViewAppearance(codeViewAppearance);
+        }
+    }
     SettingsStore::SpecialCharacterAppearance specialCharacterAppearance;
     specialCharacterAppearance.font_family = ui.cbSpecialCharacterFont->currentText();
     specialCharacterAppearance.font_size   = ui.specialCharacterFontSizeSpin->value();
@@ -138,8 +143,6 @@ PreferencesWidget::ResultAction AppearanceWidget::saveSettings()
     // to the MainWindow requesting a reload of all open tabs.
     if ((m_codeViewAppearance.font_family                  != codeViewAppearance.font_family) ||
         (m_codeViewAppearance.font_size                    != codeViewAppearance.font_size) ||
-        (m_codeViewAppearance.background_color             != codeViewAppearance.background_color) ||
-        (m_codeViewAppearance.foreground_color             != codeViewAppearance.foreground_color) ||
         (m_codeViewAppearance.css_comment_color            != codeViewAppearance.css_comment_color) ||
         (m_codeViewAppearance.css_property_color           != codeViewAppearance.css_property_color) ||
         (m_codeViewAppearance.css_quote_color              != codeViewAppearance.css_quote_color) ||
@@ -148,8 +151,6 @@ PreferencesWidget::ResultAction AppearanceWidget::saveSettings()
         (m_codeViewAppearance.line_highlight_color         != codeViewAppearance.line_highlight_color) ||
         (m_codeViewAppearance.line_number_background_color != codeViewAppearance.line_number_background_color) ||
         (m_codeViewAppearance.line_number_foreground_color != codeViewAppearance.line_number_foreground_color) ||
-        (m_codeViewAppearance.selection_background_color   != codeViewAppearance.selection_background_color) ||
-        (m_codeViewAppearance.selection_foreground_color   != codeViewAppearance.selection_foreground_color) ||
         (m_codeViewAppearance.spelling_underline_color     != codeViewAppearance.spelling_underline_color) ||
         (m_codeViewAppearance.xhtml_attribute_name_color   != codeViewAppearance.xhtml_attribute_name_color) ||
         (m_codeViewAppearance.xhtml_attribute_value_color  != codeViewAppearance.xhtml_attribute_value_color) ||
@@ -164,6 +165,9 @@ PreferencesWidget::ResultAction AppearanceWidget::saveSettings()
     if (m_ShowFullPathOn != (ui.ShowFullPath->isChecked() ? 1 : 0)) {
         return PreferencesWidget::ResultAction_RefreshBookBrowser;
     }
+    if (m_PreviewDark != (ui.PreviewDarkInDM->isChecked() ? 1 : 0)) {
+        return PreferencesWidget::ResultAction_ReloadPreview;
+    }
     return PreferencesWidget::ResultAction_None;
 }
 
@@ -173,8 +177,17 @@ SettingsStore::CodeViewAppearance AppearanceWidget::readSettings()
     ui.tabAppearance->setCurrentIndex(settings.appearancePrefsTabIndex());
     m_ShowFullPathOn = settings.showFullPathOn();
     ui.ShowFullPath->setChecked(settings.showFullPathOn());
+    m_PreviewDark = settings.previewDark(); 
+    ui.PreviewDarkInDM->setChecked(settings.previewDark());
     SettingsStore::PreviewAppearance PVAppearance = settings.previewAppearance();
-    SettingsStore::CodeViewAppearance codeViewAppearance = settings.codeViewAppearance();
+    SettingsStore::CodeViewAppearance codeViewAppearance;
+    if (Utility::IsDarkMode()) {
+        codeViewAppearance = settings.codeViewDarkAppearance();
+        m_wasDark = true;
+    } else {
+        codeViewAppearance = settings.codeViewAppearance();
+        m_wasDark = false;
+    }
     SettingsStore::SpecialCharacterAppearance specialCharacterAppearance = settings.specialCharacterAppearance();
     loadComboValueOrDefault(ui.cbPreviewFontStandard,  PVAppearance.font_family_standard,    "Arial");
     loadComboValueOrDefault(ui.cbPreviewFontSerif,     PVAppearance.font_family_serif,       "Times New Roman");
@@ -207,8 +220,6 @@ void AppearanceWidget::loadComboValueOrDefault(QFontComboBox *fontComboBox, cons
 void AppearanceWidget::loadCodeViewColorsList(SettingsStore::CodeViewAppearance codeViewAppearance)
 {
     ui.codeViewColorsList->clear();
-    addColorItem(tr("Background"),            codeViewAppearance.background_color);
-    addColorItem(tr("Foreground"),            codeViewAppearance.foreground_color);
     addColorItem(tr("CSS Comment"),           codeViewAppearance.css_comment_color);
     addColorItem(tr("CSS Property"),          codeViewAppearance.css_property_color);
     addColorItem(tr("CSS Quote"),             codeViewAppearance.css_quote_color);
@@ -217,8 +228,6 @@ void AppearanceWidget::loadCodeViewColorsList(SettingsStore::CodeViewAppearance 
     addColorItem(tr("Line Highlight"),        codeViewAppearance.line_highlight_color);
     addColorItem(tr("Line# Background"),      codeViewAppearance.line_number_background_color);
     addColorItem(tr("Line# Foreground"),      codeViewAppearance.line_number_foreground_color);
-    addColorItem(tr("Selection Background"),  codeViewAppearance.selection_background_color);
-    addColorItem(tr("Selection Foreground"),  codeViewAppearance.selection_foreground_color);
     addColorItem(tr("Spelling Underline"),    codeViewAppearance.spelling_underline_color);
     addColorItem(tr("XHTML Attribute Name"),  codeViewAppearance.xhtml_attribute_name_color);
     addColorItem(tr("XHTML Attribute Value"), codeViewAppearance.xhtml_attribute_value_color);
@@ -262,14 +271,15 @@ void AppearanceWidget::customColorButtonClicked()
 
 void AppearanceWidget::resetAllButtonClicked()
 {
-    SettingsStore settings;
-    settings.clearAppearanceSettings();
-    // Read and apply the settings without changing our m_codeViewAppearance
-    // instance holding the last persisted values.
-    SettingsStore::CodeViewAppearance codeViewAppearance = readSettings();
-    ui.codeViewColorsList->blockSignals(true);
-    loadCodeViewColorsList(codeViewAppearance);
-    ui.codeViewColorsList->blockSignals(false);
+    // only reset Appearanceprefs if mode was not changed since preference was open
+    if (m_wasDark == Utility::IsDarkMode()) {
+        SettingsStore settings;
+        settings.clearAppearanceSettings();
+        SettingsStore::CodeViewAppearance codeViewAppearance = readSettings();
+        ui.codeViewColorsList->blockSignals(true);
+        loadCodeViewColorsList(codeViewAppearance);
+        ui.codeViewColorsList->blockSignals(false);
+    }
 }
 
 void AppearanceWidget::newSliderValue(int value) {

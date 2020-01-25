@@ -24,8 +24,10 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+
 #include <QCoreApplication>
 #include <QtCore/QString>
+#include <QColor>
 
 class QStringList;
 class QStringRef;
@@ -50,6 +52,15 @@ public:
 
     // Define the user preferences location to be used
     static QString DefinePrefsDir();
+
+    // Indicates if application palette in dark mode
+    static bool IsDarkMode();
+
+    // Indicates Windows system dark mode is enabled
+    static bool IsWindowsSysDarkMode();
+
+    // Should Windows Sigil be using dark mode?
+    static bool WindowsShouldUseDarkMode();
 
 #if !defined(Q_OS_WIN32) && !defined(Q_OS_MAC)
     // Return correct path(s) for Linux hunspell dictionaries
@@ -201,6 +212,14 @@ public:
     // perform a locale aware string sort
     static QStringList LocaleAwareSort(QStringList &names);
 
+    // inject dark mode css into html for AVTab, ImageTab, ViewImage, and SelectFiles
+    static QString AddDarkCSS(const QString &html);
+
+    // inject dark mode css into Preview
+    static QString AddDarkStyleSheet(const QString &html);
+
+    // return the proper background color for QWebEngineView
+    static QColor WebViewBackgroundColor(bool followpref = false);
 };
 #endif // UTILITY_H
 

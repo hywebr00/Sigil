@@ -109,6 +109,22 @@ QSharedPointer<Book> ImportHTML::GetBook(bool extract_metadata)
 	    m_AddedBookPaths << nav_resource->GetRelativePath();
         }
     }
+
+    // Before returning the new book, if it is epub2, make sure it has an ncx
+    if (m_EpubVersion.startsWith('2')) {
+        NCXResource* ncx_resource = m_Book->GetNCX();
+        if (!ncx_resource) {
+            // add NCX using "toc.ncx" with id "ncx",  right beside OPF
+            // this is done to match the default text in a new OPF
+            QString ncxbookpath = Utility::startingDir(m_Book->GetOPF()->GetRelativePath()) + "/toc.ncx";
+            ncx_resource = m_Book->GetFolderKeeper()->AddNCXToFolder(m_EpubVersion, ncxbookpath);
+            // No Need to create a new manifest id for it as the empty epub2 already has an entry for it.
+            // and already has "ncx" entry on the spine
+            // And properly fill the empty ncx with the default contents to point to the first xhtml file
+            QString first_xhtml_bookpath = m_AddedBookPaths.at(0);
+            ncx_resource->FillWithDefaultTextToBookPath(m_EpubVersion, first_xhtml_bookpath);
+        }
+    }
     return m_Book;
 }
 
